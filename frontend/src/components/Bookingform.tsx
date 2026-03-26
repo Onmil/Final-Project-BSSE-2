@@ -1,0 +1,216 @@
+import { useState } from "react";
+import "./Bookingform.css";
+import { formatDate, TourDate, TourSchedule } from "../data/tourDates";
+
+interface Tour {
+  title: string;
+  price: string;
+  image: string;
+}
+
+interface BookingFormProps {
+  tour: Tour;
+  onClose: () => void;
+  onConfirm: (booking: BookingData) => void;
+  schedules: TourSchedule;
+}
+
+export interface BookingData {
+  id: string;
+  tour: Tour;
+  fullName: string;
+  email: string;
+  phone: string;
+  persons: number;
+  date: string;
+  status: "confirmed";
+}
+
+type Step = "form" | "success";
+
+export default function BookingForm({ tour, onClose, onConfirm, schedules }: BookingFormProps) {
+  const [step, setStep] = useState<Step>("form");
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    persons: 1,
+    date: "",
+  });
+
+  const dates: TourDate[] = schedules[tour.title] ?? [];
+  const selectedDate = dates.find((d) => d.date === form.date);
+  const maxPersons = selectedDate ? selectedDate.spotsLeft : 40;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+      ...(name === "date" && form.persons > (dates.find((d) => d.date === value)?.spotsLeft ?? 40)
+        ? { persons: 1 }
+        : {}),
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const booking: BookingData = {
+      id: crypto.randomUUID(),
+      tour,
+      ...form,
+      persons: Number(form.persons),
+      status: "confirmed",
+    };
+    onConfirm(booking);
+    setStep("success");
+  };
+
+  const totalPrice = () => {
+    const base = parseInt(tour.price.replace(/[^\d]/g, ""));
+    return `₱${(base * form.persons).toLocaleString()}`;
+  };
+
+  return (
+    <div className="bf-overlay" onClick={step === "success" ? onClose : undefined}>
+
+      {step === "success" && (
+        <div className="bf-confetti-wrap" aria-hidden>
+          {Array.from({ length: 60 }).map((_, i) => (
+            <span key={i} className="bf-confetti-piece" style={{
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 1.5}s`,
+              animationDuration: `${2 + Math.random() * 2}s`,
+              backgroundColor: ["#5bb8a0","#ffd700","#ff6b6b","#74b9ff","#a29bfe","#fd79a8"][i % 6],
+              width: `${6 + Math.random() * 8}px`,
+              height: `${6 + Math.random() * 8}px`,
+              borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+            }} />
+          ))}
+        </div>
+      )}
+
+      {step === "form" && (
+        <div className="bf-box" onClick={(e) => e.stopPropagation()}>
+
+          <div className="bf-header" style={{ backgroundImage: `url(${tour.image})` }}>
+            <div className="bf-header-overlay" />
+            <div className="bf-header-content">
+              <h2 className="bf-tour-name">{tour.title}</h2>
+              <p className="bf-tour-price">{tour.price} / person</p>
+            </div>
+            <button className="bf-close" onClick={onClose}>✕</button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="bf-form">
+            <div className="bf-row">
+              <div className="bf-field">
+                <label>Full Name</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  placeholder="Peter Parker"
+                  value={form.fullName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="bf-field">
+                <label>Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="peterparker16@gmail.com"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="bf-row">
+              <div className="bf-field">
+                <label>Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="+63 912 345 6789"
+                  value={form.phone}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="bf-field">
+                <label>Available Date</label>
+                <select
+                  name="date"
+                  value={form.date}
+                  onChange={handleChange}
+                  required
+                  className="bf-select"
+                >
+                  <option value="">Select a date</option>
+                  {dates.map((d) => (
+                    <option
+                      key={d.date}
+                      value={d.date}
+                      disabled={d.spotsLeft === 0}
+                    >
+                      {formatDate(d.date)} — {d.spotsLeft === 0 ? "Full" : `${d.spotsLeft} spots left`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="bf-field">
+              <label>
+                Number of Persons
+                {selectedDate && (
+                  <span className="bf-spots-hint"> (max {selectedDate.spotsLeft})</span>
+                )}
+              </label>
+              <div className="bf-counter">
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, persons: Math.max(1, f.persons - 1) }))}
+                >−</button>
+                <span>{form.persons}</span>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, persons: Math.min(maxPersons, f.persons + 1) }))}
+                >+</button>
+              </div>
+            </div>
+
+            <div className="bf-total">
+              <span>Total</span>
+              <span className="bf-total-price">{totalPrice()}</span>
+            </div>
+
+            <button type="submit" className="bf-submit" disabled={!form.date}>
+              Confirm Booking
+            </button>
+          </form>
+        </div>
+      )}
+
+      {step === "success" && (
+        <div className="bf-success" onClick={(e) => e.stopPropagation()}>
+          <div className="bf-success-icon">🎉</div>
+          <h2 className="bf-success-title">Booking Confirmed!</h2>
+          <p className="bf-success-msg">
+            Your trip to <strong>{tour.title}</strong> on{" "}
+            <strong>{formatDate(form.date)}</strong> is booked!
+          </p>
+          <p className="bf-success-sub">
+            Check your Destinations page to view your booking details.
+          </p>
+          <button className="bf-submit" onClick={onClose}>Got it!</button>
+        </div>
+      )}
+
+    </div>
+  );
+}
