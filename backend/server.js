@@ -1,21 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
+
+const toursRoutes = require('./routes/tours');
+const bookingsRoutes = require('./routes/bookings');
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// Initialize Supabase
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+// Routes
+app.use('/tours', toursRoutes);
+app.use('/bookings', bookingsRoutes);
 
-// Example GET endpoint
-app.get('/tours', async (req, res) => {
-  const { data, error } = await supabase.from('tours').select('*');
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+// Test route
+app.get('/', (req, res) => {
+  res.send('API is running');
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
