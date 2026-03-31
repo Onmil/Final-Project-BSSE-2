@@ -98,6 +98,7 @@ function App() {
           onClose={() => setBookingTour(null)}
           onConfirm={handleConfirmBooking}
           schedules={schedules}
+          userId={user?.email ?? "guest"}
         />
       )}
     </>

@@ -2,13 +2,33 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../services/supabaseClient');
 
-// CREATE booking
+// POST booking
 router.post('/', async (req, res) => {
-  const { user_id, tour_id, booking_date } = req.body;
+  const {
+    user_id,
+    tour_id,
+    booking_date,
+    full_name,
+    email,
+    phone,
+    persons,
+    status,
+  } = req.body;
 
   const { data, error } = await supabase
     .from('bookings')
-    .insert([{ user_id, tour_id, booking_date }])
+    .insert([
+      {
+        user_id,
+        tour_id,
+        booking_date,
+        full_name,
+        email,
+        phone,
+        persons,
+        status,
+      },
+    ])
     .select();
 
   if (error) return res.status(500).json({ error: error.message });
