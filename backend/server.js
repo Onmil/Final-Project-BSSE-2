@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const toursRoutes = require('./routes/tours');
 const bookingsRoutes = require('./routes/bookings');
+const usersRoutes = require('./routes/users');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 // Routes
 app.use('/tours', toursRoutes);
 app.use('/bookings', bookingsRoutes);
+app.use('/users', usersRoutes);
 
 // Test route
 app.get('/', (req, res) => {

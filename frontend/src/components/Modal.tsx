@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./Modal.css";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+
 interface ModalProps {
   type: "login" | "signup";
   onClose: () => void;
@@ -13,8 +15,6 @@ interface FormErrors {
   email?: string;
   password?: string;
 }
-
-const registeredEmails: string[] = [];
 
 function getPasswordStrength(password: string): { label: string; color: string; score: number } {
   let score = 0;
@@ -32,6 +32,7 @@ function getPasswordStrength(password: string): { label: string; color: string; 
 export default function Modal({ type, onClose, onSwitch, onSuccess }: ModalProps) {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [errors, setErrors] = useState<FormErrors>({});
+  const [submitError, setSubmitError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const strength = getPasswordStrength(form.password);
@@ -46,8 +47,6 @@ export default function Modal({ type, onClose, onSwitch, onSuccess }: ModalProps
       e.email = "Email is required.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       e.email = "Enter a valid email address.";
-    else if (type === "signup" && registeredEmails.includes(form.email.toLowerCase()))
-      e.email = "This email is already used.";
 
     if (!form.password)
       e.password = "Password is required.";
@@ -65,15 +64,29 @@ export default function Modal({ type, onClose, onSwitch, onSuccess }: ModalProps
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors = validate();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    setSubmitError("");
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
-    if (type === "signup") registeredEmails.push(form.email.toLowerCase());
-    onSuccess({ name: form.name || form.email.split("@")[0], email: form.email });
+
+    try {
+      const endpoint = type === "signup" ? "/users/signup" : "/users/login";
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Request failed");
+      onSuccess({ name: data.name, email: data.email });
+    } catch (err: any) {
+      setSubmitError(err.message);
+    }
   };
 
   const handleSwitch = (t: "login" | "signup") => {
@@ -167,6 +180,7 @@ export default function Modal({ type, onClose, onSwitch, onSuccess }: ModalProps
           <button type="submit" className="modal-submit">
             {type === "login" ? "Log In" : "Sign Up"}
           </button>
+          {submitError && <span className="field-error">{submitError}</span>}
         </form>
 
         <p className="modal-switch">

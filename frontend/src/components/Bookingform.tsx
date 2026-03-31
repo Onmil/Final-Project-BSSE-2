@@ -5,6 +5,7 @@ import { formatDate, TourDate, TourSchedule } from "../data/tourDates";
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
 interface Tour {
+  id: number;
   title: string;
   price: string;
   image: string;
@@ -59,50 +60,52 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitError("");
-    setSubmitting(true);
+  e.preventDefault();
+  setSubmitError("");
+  setSubmitting(true);
 
-    try {
-      const payload = {
-        user_id: userId ?? "guest",
-        tour_id: tour.title,
-        booking_date: form.date,
-        full_name: form.fullName,
-        email: form.email,
-        phone: form.phone,
-        persons: Number(form.persons),
-        status: "confirmed",
-      };
+  try {
+    // Ensure tour_id is numeric (from your tours table)
+    const tourId = Number(tour.id);
+    if (isNaN(tourId)) throw new Error("Invalid tour selected");
 
-      const response = await fetch(`${API_BASE}/bookings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+    const payload = {
+      user_id: userId ?? "guest",
+      tour_id: tourId,          // <- numeric now
+      booking_date: form.date,
+      full_name: form.fullName,
+      email: form.email,
+      phone: form.phone,
+      persons: Number(form.persons),
+      status: "confirmed",
+    };
 
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result?.error || response.statusText || "Booking request failed");
-      }
+    const response = await fetch(`${API_BASE}/bookings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      const booking: BookingData = {
-        id: crypto.randomUUID(),
-        tour,
-        ...form,
-        persons: Number(form.persons),
-        status: "confirmed",
-      };
-      onConfirm(booking);
-      setStep("success");
-    } catch (error: any) {
-      setSubmitError(error?.message || "Unable to create booking. Please try again.");
-    } finally {
-      setSubmitting(false);
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result?.error || response.statusText || "Booking request failed");
     }
-  };
+
+    const booking: BookingData = {
+      id: crypto.randomUUID(),
+      tour,
+      ...form,
+      persons: Number(form.persons),
+      status: "confirmed",
+    };
+    onConfirm(booking);
+    setStep("success");
+  } catch (error: any) {
+    setSubmitError(error?.message || "Unable to create booking. Please try again.");
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const totalPrice = () => {
     const base = parseInt(tour.price.replace(/[^\d]/g, ""));

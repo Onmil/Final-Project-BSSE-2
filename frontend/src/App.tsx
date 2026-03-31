@@ -14,9 +14,12 @@ interface User {
 }
 
 interface Tour {
-  title: string;
-  price: string;
-  image: string;
+  id: number;           // matches tours.id in Supabase
+  name: string;         // matches tours.name
+  price: string;        // formatted string, e.g., "₱5000"
+  image?: string;       // optional if you store images
+  description?: string; // optional
+  duration?: string;    // optional
 }
 
 function App() {
