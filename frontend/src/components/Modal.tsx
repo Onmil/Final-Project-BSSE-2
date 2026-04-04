@@ -3,11 +3,17 @@ import "./Modal.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
+interface User {
+  id: string; // UUID from Supabase
+  name: string;
+  email: string;
+}
+
 interface ModalProps {
   type: "login" | "signup";
   onClose: () => void;
   onSwitch: (type: "login" | "signup") => void;
-  onSuccess: (user: { name: string; email: string }) => void;
+  onSuccess: (user: User) => void; // updated to include id
 }
 
 interface FormErrors {
@@ -83,7 +89,9 @@ export default function Modal({ type, onClose, onSwitch, onSuccess }: ModalProps
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Request failed");
-      onSuccess({ name: data.name, email: data.email });
+
+      // Ensure we include the UUID from your backend
+      onSuccess({ id: data.id, name: data.name, email: data.email });
     } catch (err: any) {
       setSubmitError(err.message);
     }

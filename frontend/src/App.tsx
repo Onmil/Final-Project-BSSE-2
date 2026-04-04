@@ -3,23 +3,16 @@ import LandingPage from "./pages/LandingPage";
 import ToursPage from "./pages/Tours";
 import Navbar from "./components/Navbar";
 import Modal from "./components/Modal";
-import BookingForm, { BookingData } from "./components/Bookingform";
+import BookingForm from "./components/Bookingform";
 import { tourSchedules } from "./data/tourDates";
+import { Tour, BookingData, TourSchedule } from "./types";
 
 type Page = "home" | "tours";
 
 interface User {
+  id: string; // UUID from Supabase
   name: string;
   email: string;
-}
-
-interface Tour {
-  id: number;           // matches tours.id in Supabase
-  name: string;         // matches tours.name
-  price: string;        // formatted string, e.g., "₱5000"
-  image?: string;       // optional if you store images
-  description?: string; // optional
-  duration?: string;    // optional
 }
 
 function App() {
@@ -28,7 +21,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [bookingTour, setBookingTour] = useState<Tour | null>(null);
   const [bookings, setBookings] = useState<BookingData[]>([]);
-  const [schedules, setSchedules] = useState(tourSchedules);
+  const [schedules, setSchedules] = useState<TourSchedule>(tourSchedules);
 
   const isLoggedIn = user !== null;
 
@@ -57,9 +50,9 @@ function App() {
     setBookings((prev) => [...prev, booking]);
     setSchedules((prev) => {
       const updated = { ...prev };
-      const tourDates = updated[booking.tour.title];
+      const tourDates = updated[booking.tour.name];
       if (tourDates) {
-        updated[booking.tour.title] = tourDates.map((d) =>
+        updated[booking.tour.name] = tourDates.map((d) =>
           d.date === booking.date
             ? { ...d, spotsLeft: Math.max(0, d.spotsLeft - booking.persons) }
             : d
@@ -101,7 +94,7 @@ function App() {
           onClose={() => setBookingTour(null)}
           onConfirm={handleConfirmBooking}
           schedules={schedules}
-          userId={user?.email ?? "guest"}
+          userUuid={user?.id ?? null} // Pass UUID instead of email
         />
       )}
     </>
