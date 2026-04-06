@@ -2,10 +2,13 @@ import { useState } from "react";
 import "./Bookingform.css";
 import { formatDate, TourDate, TourSchedule } from "../data/tourDates";
 
+const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
+
 interface Tour {
   title: string;
   price: string;
   image: string;
+  id?: number;
 }
 
 interface BookingFormProps {
@@ -13,6 +16,8 @@ interface BookingFormProps {
   onClose: () => void;
   onConfirm: (booking: BookingData) => void;
   schedules: TourSchedule;
+  userId: number;
+  onGoToDestinations: () => void;
 }
 
 export interface BookingData {
@@ -28,7 +33,7 @@ export interface BookingData {
 
 type Step = "form" | "success";
 
-export default function BookingForm({ tour, onClose, onConfirm, schedules }: BookingFormProps) {
+export default function BookingForm({ tour, onClose, onConfirm, schedules, userId, onGoToDestinations }: BookingFormProps) {
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     fullName: "",
@@ -37,6 +42,8 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules }: Boo
     persons: 1,
     date: "",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const dates: TourDate[] = schedules[tour.title] ?? [];
   const selectedDate = dates.find((d) => d.date === form.date);
@@ -53,17 +60,49 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules }: Boo
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const booking: BookingData = {
-      id: crypto.randomUUID(),
-      tour,
-      ...form,
-      persons: Number(form.persons),
-      status: "confirmed",
-    };
-    onConfirm(booking);
-    setStep("success");
+    setSubmitError("");
+    setSubmitting(true);
+
+    try {
+      const payload = {
+        user_id: userId,
+        tour_id: tour.id ?? 0,
+        booking_date: form.date,
+        full_name: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        persons: Number(form.persons),
+        status: "confirmed",
+      };
+
+      const response = await fetch(`${API_BASE}/api/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result?.error || "Booking failed. Please try again.");
+      }
+
+      const booking: BookingData = {
+        id: result[0]?.id ?? crypto.randomUUID(),
+        tour,
+        ...form,
+        persons: Number(form.persons),
+        status: "confirmed",
+      };
+
+      onConfirm(booking);
+      setStep("success");
+    } catch (error: any) {
+      setSubmitError(error?.message || "Unable to create booking. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const totalPrice = () => {
@@ -189,8 +228,10 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules }: Boo
               <span className="bf-total-price">{totalPrice()}</span>
             </div>
 
-            <button type="submit" className="bf-submit" disabled={!form.date}>
-              Confirm Booking
+            {submitError && <p className="bf-error">{submitError}</p>}
+
+            <button type="submit" className="bf-submit" disabled={!form.date || submitting}>
+              {submitting ? "Submitting..." : "Confirm Booking"}
             </button>
           </form>
         </div>
@@ -207,7 +248,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules }: Boo
           <p className="bf-success-sub">
             Check your Destinations page to view your booking details.
           </p>
-          <button className="bf-submit" onClick={onClose}>Got it!</button>
+          <button className="bf-submit" onClick={() => { onClose(); onGoToDestinations(); }}>Got it!</button>
         </div>
       )}
 

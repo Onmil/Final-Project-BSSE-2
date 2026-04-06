@@ -5,10 +5,12 @@ import Navbar from "./components/Navbar";
 import Modal from "./components/Modal";
 import BookingForm, { BookingData } from "./components/Bookingform";
 import { tourSchedules } from "./data/tourDates";
+import DestinationsPage from "./pages/Destinations";
 
-type Page = "home" | "tours";
+type Page = "home" | "tours" | "destinations";
 
 interface User {
+  id?: string;
   name: string;
   email: string;
 }
@@ -47,7 +49,7 @@ function App() {
 
   const handleNavigate = (page: Page) => {
     if (page === "tours") handleGoToTours();
-    else setCurrentPage("home");
+    else setCurrentPage(page);
   };
 
   const handleConfirmBooking = (booking: BookingData) => {
@@ -82,6 +84,9 @@ function App() {
       {currentPage === "tours" && (
         <ToursPage onBook={(tour) => setBookingTour(tour)} />
       )}
+      {currentPage === "destinations" && (
+        <DestinationsPage userId={user?.id ?? ""} bookings={bookings} />
+      )}
 
       {modalType && (
         <Modal
@@ -98,6 +103,11 @@ function App() {
           onClose={() => setBookingTour(null)}
           onConfirm={handleConfirmBooking}
           schedules={schedules}
+          userId={Number(user?.id ?? 0)}
+          onGoToDestinations={() => {
+            setBookingTour(null);
+            setCurrentPage("destinations");
+          }}
         />
       )}
     </>

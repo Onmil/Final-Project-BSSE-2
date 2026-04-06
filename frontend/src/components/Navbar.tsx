@@ -4,7 +4,7 @@ import logo from "../assets/images/m_logo.png";
 
 const NAV_LINKS = ["HOME", "TOURS", "DESTINATIONS"];
 
-type Page = "home" | "tours";
+type Page = "home" | "tours" | "destinations";
 
 interface User {
   name: string;
@@ -36,12 +36,14 @@ export default function Navbar({ onLoginClick, onSignupClick, onNavigate, curren
 
   const getActive = () => {
     if (currentPage === "tours") return "TOURS";
+    if (currentPage === "destinations") return "DESTINATIONS";
     return "HOME";
   };
 
   const handleNav = (link: string) => {
     if (link === "HOME") onNavigate("home");
     else if (link === "TOURS") onNavigate("tours");
+    else if (link === "DESTINATIONS") onNavigate("destinations");
   };
 
   const getInitials = (name: string) =>
