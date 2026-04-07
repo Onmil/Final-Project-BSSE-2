@@ -3,22 +3,17 @@ import LandingPage from "./pages/LandingPage";
 import ToursPage from "./pages/Tours";
 import Navbar from "./components/Navbar";
 import Modal from "./components/Modal";
-import BookingForm, { BookingData } from "./components/Bookingform";
+import BookingForm from "./components/Bookingform";
 import { tourSchedules } from "./data/tourDates";
 import DestinationsPage from "./pages/Destinations";
+import { Tour, BookingData, TourSchedule } from "./types";
 
 type Page = "home" | "tours" | "destinations";
 
 interface User {
-  id?: string;
+  id: string; // UUID from Supabase
   name: string;
   email: string;
-}
-
-interface Tour {
-  title: string;
-  price: string;
-  image: string;
 }
 
 function App() {
@@ -27,7 +22,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [bookingTour, setBookingTour] = useState<Tour | null>(null);
   const [bookings, setBookings] = useState<BookingData[]>([]);
-  const [schedules, setSchedules] = useState(tourSchedules);
+  const [schedules, setSchedules] = useState<TourSchedule>(tourSchedules);
 
   const isLoggedIn = user !== null;
 
@@ -56,9 +51,9 @@ function App() {
     setBookings((prev) => [...prev, booking]);
     setSchedules((prev) => {
       const updated = { ...prev };
-      const tourDates = updated[booking.tour.title];
+      const tourDates = updated[booking.tour.name];
       if (tourDates) {
-        updated[booking.tour.title] = tourDates.map((d) =>
+        updated[booking.tour.name] = tourDates.map((d) =>
           d.date === booking.date
             ? { ...d, spotsLeft: Math.max(0, d.spotsLeft - booking.persons) }
             : d
@@ -103,11 +98,7 @@ function App() {
           onClose={() => setBookingTour(null)}
           onConfirm={handleConfirmBooking}
           schedules={schedules}
-          userId={Number(user?.id ?? 0)}
-          onGoToDestinations={() => {
-            setBookingTour(null);
-            setCurrentPage("destinations");
-          }}
+          userUuid={user?.id ?? null} // Pass UUID instead of email
         />
       )}
     </>

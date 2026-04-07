@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./Bookingform.css";
-import { formatDate, TourDate, TourSchedule } from "../data/tourDates";
+import { formatDate } from "../data/tourDates";
+import { Tour, BookingData, TourSchedule, TourDate } from "../types";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
@@ -29,11 +30,12 @@ export interface BookingData {
   persons: number;
   date: string;
   status: "confirmed";
+  userUuid?: string | null; // <-- optional UUID
 }
 
 type Step = "form" | "success";
 
-export default function BookingForm({ tour, onClose, onConfirm, schedules, userId, onGoToDestinations }: BookingFormProps) {
+export default function BookingForm({ tour, onClose, onConfirm, schedules, userUuid }: BookingFormProps) {
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     fullName: "",
@@ -45,7 +47,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  const dates: TourDate[] = schedules[tour.title] ?? [];
+  const dates: TourDate[] = schedules[tour.name] ?? [];
   const selectedDate = dates.find((d) => d.date === form.date);
   const maxPersons = selectedDate ? selectedDate.spotsLeft : 40;
 
@@ -66,9 +68,12 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
     setSubmitting(true);
 
     try {
+      const tourId = Number(tour.id);
+      if (isNaN(tourId)) throw new Error("Invalid tour selected");
+
       const payload = {
-        user_id: userId,
-        tour_id: tour.id ?? 0,
+        user_uuid: userUuid ?? null, // <-- correct UUID sent
+        tour_id: tour.id,
         booking_date: form.date,
         full_name: form.fullName,
         email: form.email,
@@ -77,7 +82,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
         status: "confirmed",
       };
 
-      const response = await fetch(`${API_BASE}/api/bookings`, {
+      const response = await fetch(`${API_BASE}/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -85,11 +90,11 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
 
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result?.error || "Booking failed. Please try again.");
+        throw new Error(result?.error || response.statusText || "Booking request failed");
       }
 
       const booking: BookingData = {
-        id: result[0]?.id ?? crypto.randomUUID(),
+        id: crypto.randomUUID(),
         tour,
         ...form,
         persons: Number(form.persons),
@@ -112,7 +117,6 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
 
   return (
     <div className="bf-overlay" onClick={step === "success" ? onClose : undefined}>
-
       {step === "success" && (
         <div className="bf-confetti-wrap" aria-hidden>
           {Array.from({ length: 60 }).map((_, i) => (
@@ -120,7 +124,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
               left: `${Math.random() * 100}%`,
               animationDelay: `${Math.random() * 1.5}s`,
               animationDuration: `${2 + Math.random() * 2}s`,
-              backgroundColor: ["#5bb8a0","#ffd700","#ff6b6b","#74b9ff","#a29bfe","#fd79a8"][i % 6],
+              backgroundColor: ["#5bb8a0", "#ffd700", "#ff6b6b", "#74b9ff", "#a29bfe", "#fd79a8"][i % 6],
               width: `${6 + Math.random() * 8}px`,
               height: `${6 + Math.random() * 8}px`,
               borderRadius: Math.random() > 0.5 ? "50%" : "2px",
@@ -131,11 +135,10 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
 
       {step === "form" && (
         <div className="bf-box" onClick={(e) => e.stopPropagation()}>
-
-          <div className="bf-header" style={{ backgroundImage: `url(${tour.image})` }}>
+          <div className="bf-header" style={{ backgroundImage: `url(${tour.image ?? "fallback.png"})` }}>
             <div className="bf-header-overlay" />
             <div className="bf-header-content">
-              <h2 className="bf-tour-name">{tour.title}</h2>
+              <h2 className="bf-tour-name">{tour.name}</h2>
               <p className="bf-tour-price">{tour.price} / person</p>
             </div>
             <button className="bf-close" onClick={onClose}>✕</button>
@@ -145,57 +148,25 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
             <div className="bf-row">
               <div className="bf-field">
                 <label>Full Name</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  placeholder="Peter Parker"
-                  value={form.fullName}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="text" name="fullName" value={form.fullName} onChange={handleChange} required />
               </div>
               <div className="bf-field">
                 <label>Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="peterparker16@gmail.com"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="email" name="email" value={form.email} onChange={handleChange} required />
               </div>
             </div>
 
             <div className="bf-row">
               <div className="bf-field">
                 <label>Phone Number</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  placeholder="+63 912 345 6789"
-                  value={form.phone}
-                  onChange={handleChange}
-                  required
-                />
+                <input type="tel" name="phone" value={form.phone} onChange={handleChange} required />
               </div>
-
               <div className="bf-field">
                 <label>Available Date</label>
-                <select
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                  required
-                  className="bf-select"
-                >
+                <select name="date" value={form.date} onChange={handleChange} required>
                   <option value="">Select a date</option>
                   {dates.map((d) => (
-                    <option
-                      key={d.date}
-                      value={d.date}
-                      disabled={d.spotsLeft === 0}
-                    >
+                    <option key={d.date} value={d.date} disabled={d.spotsLeft === 0}>
                       {formatDate(d.date)} — {d.spotsLeft === 0 ? "Full" : `${d.spotsLeft} spots left`}
                     </option>
                   ))}
@@ -204,22 +175,11 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
             </div>
 
             <div className="bf-field">
-              <label>
-                Number of Persons
-                {selectedDate && (
-                  <span className="bf-spots-hint"> (max {selectedDate.spotsLeft})</span>
-                )}
-              </label>
+              <label>Number of Persons{selectedDate && ` (max ${selectedDate.spotsLeft})`}</label>
               <div className="bf-counter">
-                <button
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, persons: Math.max(1, f.persons - 1) }))}
-                >−</button>
+                <button type="button" onClick={() => setForm(f => ({ ...f, persons: Math.max(1, f.persons - 1) }))}>−</button>
                 <span>{form.persons}</span>
-                <button
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, persons: Math.min(maxPersons, f.persons + 1) }))}
-                >+</button>
+                <button type="button" onClick={() => setForm(f => ({ ...f, persons: Math.min(maxPersons, f.persons + 1) }))}>+</button>
               </div>
             </div>
 
@@ -242,8 +202,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
           <div className="bf-success-icon">🎉</div>
           <h2 className="bf-success-title">Booking Confirmed!</h2>
           <p className="bf-success-msg">
-            Your trip to <strong>{tour.title}</strong> on{" "}
-            <strong>{formatDate(form.date)}</strong> is booked!
+            Your trip to <strong>{tour.name}</strong> on <strong>{formatDate(form.date)}</strong> is booked!
           </p>
           <p className="bf-success-sub">
             Check your Destinations page to view your booking details.
@@ -251,7 +210,6 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userI
           <button className="bf-submit" onClick={() => { onClose(); onGoToDestinations(); }}>Got it!</button>
         </div>
       )}
-
     </div>
   );
 }
