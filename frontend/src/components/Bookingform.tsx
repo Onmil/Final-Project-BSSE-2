@@ -5,11 +5,31 @@ import { Tour, BookingData, TourSchedule, TourDate } from "../types";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
+interface Tour {
+  title: string;
+  price: string;
+  image: string;
+  id?: number;
+}
+
 interface BookingFormProps {
   tour: Tour;
   onClose: () => void;
   onConfirm: (booking: BookingData) => void;
   schedules: TourSchedule;
+  userId: number;
+  onGoToDestinations: () => void;
+}
+
+export interface BookingData {
+  id: string;
+  tour: Tour;
+  fullName: string;
+  email: string;
+  phone: string;
+  persons: number;
+  date: string;
+  status: "confirmed";
   userUuid?: string | null; // <-- optional UUID
 }
 
@@ -80,6 +100,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
         persons: Number(form.persons),
         status: "confirmed",
       };
+
       onConfirm(booking);
       setStep("success");
     } catch (error: any) {
@@ -186,7 +207,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
           <p className="bf-success-sub">
             Check your Destinations page to view your booking details.
           </p>
-          <button className="bf-submit" onClick={onClose}>Got it!</button>
+          <button className="bf-submit" onClick={() => { onClose(); onGoToDestinations(); }}>Got it!</button>
         </div>
       )}
     </div>

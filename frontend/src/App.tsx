@@ -5,9 +5,10 @@ import Navbar from "./components/Navbar";
 import Modal from "./components/Modal";
 import BookingForm from "./components/Bookingform";
 import { tourSchedules } from "./data/tourDates";
+import DestinationsPage from "./pages/Destinations";
 import { Tour, BookingData, TourSchedule } from "./types";
 
-type Page = "home" | "tours";
+type Page = "home" | "tours" | "destinations";
 
 interface User {
   id: string; // UUID from Supabase
@@ -43,7 +44,7 @@ function App() {
 
   const handleNavigate = (page: Page) => {
     if (page === "tours") handleGoToTours();
-    else setCurrentPage("home");
+    else setCurrentPage(page);
   };
 
   const handleConfirmBooking = (booking: BookingData) => {
@@ -77,6 +78,9 @@ function App() {
       {currentPage === "home" && <LandingPage onExplore={handleGoToTours} />}
       {currentPage === "tours" && (
         <ToursPage onBook={(tour) => setBookingTour(tour)} />
+      )}
+      {currentPage === "destinations" && (
+        <DestinationsPage userId={user?.id ?? ""} bookings={bookings} />
       )}
 
       {modalType && (
