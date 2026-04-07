@@ -43,7 +43,10 @@ export default function Navbar({ onLoginClick, onSignupClick, onNavigate, curren
   const handleNav = (link: string) => {
     if (link === "HOME") onNavigate("home");
     else if (link === "TOURS") onNavigate("tours");
-    else if (link === "DESTINATIONS") onNavigate("destinations");
+    else if (link === "DESTINATIONS") {
+      if (user) onNavigate("destinations");
+      else onSignupClick();
+    }
   };
 
   const getInitials = (name: string) =>

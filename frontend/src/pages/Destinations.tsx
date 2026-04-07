@@ -6,7 +6,8 @@ import palawan from "../assets/images/palaw_2k.jpg";
 import bacolod from "../assets/images/bcd_2k.png";
 import islagigantes from "../assets/images/isla_2k.png";
 import iloilo from "../assets/images/ilo_2k.png";
-import { Tour, BookingData, TourSchedule, TourDate } from "../types";
+import { supabase } from "../supabaseClient";
+import { ITINERARIES } from "../data/Itineraries";
 
 const imageMap: Record<string, string> = {
   Guimaras: guim,
@@ -17,24 +18,161 @@ const imageMap: Record<string, string> = {
   "Isla Gigantes": islagigantes,
 };
 
+const TOUR_MAP: Record<number, { name: string; price: string }> = {
+  1: { name: "Guimaras", price: "₱2,500" },
+  2: { name: "Boracay", price: "₱4,500" },
+  3: { name: "Palawan", price: "₱5,500" },
+  4: { name: "Iloilo", price: "₱2,500" },
+  5: { name: "Bacolod", price: "₱3,000" },
+  6: { name: "Isla Gigantes", price: "₱3,500" },
+  101: { name: "BGPS Explorer", price: "₱18,500" },
+  102: { name: "Island Duo", price: "₱9,500" },
+  103: { name: "Islands & Scallops", price: "₱7,000" },
+  104: { name: "Iloilo & Guimaras", price: "₱5,500" },
+  105: { name: "Iloilo & Bacolod", price: "₱6,000" },
+  106: { name: "Visayas Grand Tour", price: "₱14,500" },
+};
+
+interface BookingRow {
+  id: number;
+  tour_id: number;
+  booking_date: string;
+  status: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  persons: number;
+  user_id: string;
+}
 
 interface DestinationsPageProps {
-  userId: string;
-  bookings: BookingData[];
+  userId: string | null;
 }
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: "Confirmed", bg: "#e6f9f2", color: "#0f7a52" },
-  pending:   { label: "Pending",   bg: "#fff7e0", color: "#b07d00" },
+  pending: { label: "Pending", bg: "#fff7e0", color: "#b07d00" },
   cancelled: { label: "Cancelled", bg: "#fdecea", color: "#c0392b" },
 };
 
-export default function DestinationsPage({ bookings }: DestinationsPageProps) {
+interface ItineraryModalProps {
+  bookingId: number | null;
+  tourName: string;
+  tourImage: string;
+  onClose: () => void;
+}
+
+function ItineraryModal({ bookingId, tourName, tourImage, onClose }: ItineraryModalProps) {
+  if (bookingId === null) return null;
+  const itinerary = ITINERARIES[bookingId];
+  if (!itinerary) return null;
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return (
+    <div className="itin-backdrop" onClick={handleBackdropClick}>
+      <div className="itin-modal">
+        <div className="itin-modal-hero">
+          <img src={tourImage} alt={tourName} />
+          <div className="itin-modal-hero-overlay">
+            <p className="itin-modal-eyebrow">🗓 Itinerary</p>
+            <h2 className="itin-modal-title">{tourName}</h2>
+          </div>
+          <button className="itin-close-btn" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <div className="itin-modal-body">
+          <div className="itin-meetup-row">
+            <div className="itin-meetup-chip">
+              <span className="itin-meetup-icon">⏰</span>
+              <div>
+                <p className="itin-meetup-label">Meet-up Time</p>
+                <p className="itin-meetup-value">{itinerary.meetupTime}</p>
+              </div>
+            </div>
+            <div className="itin-meetup-chip">
+              <span className="itin-meetup-icon">📍</span>
+              <div>
+                <p className="itin-meetup-label">Meet-up Place</p>
+                <p className="itin-meetup-value">{itinerary.meetupPlace}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="itin-days">
+            {itinerary.days.map((day, dayIdx) => (
+              <div key={dayIdx} className="itin-day">
+                <div className="itin-day-header">
+                  <span className="itin-day-badge">{day.day}</span>
+                  <span className="itin-day-title">{day.title}</span>
+                </div>
+                <div className="itin-timeline">
+                  {day.activities.map((act, actIdx) => (
+                    <div key={actIdx} className="itin-timeline-item">
+                      <div className="itin-timeline-dot" />
+                      <div className="itin-timeline-content">
+                        <span className="itin-timeline-time">{act.time}</span>
+                        <span className="itin-timeline-activity">{act.activity}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function DestinationsPage({ userId }: DestinationsPageProps) {
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalBooking, setModalBooking] = useState<BookingRow | null>(null);
 
   useEffect(() => {
-    setTimeout(() => setLoading(false), 300);
-  }, []);
+    const fetchBookings = async () => {
+      if (!userId) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("user_id", userId);
+
+      if (error) {
+        console.error("Error fetching bookings:", error);
+        setBookings([]);
+      } else {
+        setBookings((data as BookingRow[]) || []);
+      }
+
+      setLoading(false);
+    };
+
+    fetchBookings();
+  }, [userId]);
+
+  useEffect(() => {
+    if (modalBooking) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [modalBooking]);
 
   const formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString("en-PH", {
@@ -44,12 +182,13 @@ export default function DestinationsPage({ bookings }: DestinationsPageProps) {
       day: "numeric",
     });
 
-  const totalPrice = (booking: BookingData) => {
-    const base = parseInt(booking.tour.price.replace(/[^\d]/g, "")) || 0;
+  const totalPrice = (booking: BookingRow) => {
+    const tour = TOUR_MAP[booking.tour_id];
+    const base = parseInt(tour?.price?.replace(/[^\d]/g, "") || "0", 10);
     return `₱${(base * booking.persons).toLocaleString()}`;
   };
 
-  const getTourImage = (title: string) => imageMap[title] || guim;
+  const getTourImage = (name: string) => imageMap[name] || guim;
 
   return (
     <div className="dest-page">
@@ -77,25 +216,30 @@ export default function DestinationsPage({ bookings }: DestinationsPageProps) {
       {!loading && bookings.length > 0 && (
         <div className="dest-grid">
           {bookings.map((booking) => {
+            const tourName = TOUR_MAP[booking.tour_id]?.name || "Unknown Tour";
+            const tourImage = getTourImage(tourName);
             const status = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
-            const tourImage = getTourImage(booking.tour.name);
+            const hasItinerary = !!ITINERARIES[booking.tour_id];
 
             return (
               <div key={booking.id} className="dest-card">
                 <div className="dest-card-image">
-                  <img src={tourImage} alt={booking.tour.name} />
-                  <span className="dest-status-badge" style={{ background: status.bg, color: status.color }}>
+                  <img src={tourImage} alt={tourName} />
+                  <span
+                    className="dest-status-badge"
+                    style={{ background: status.bg, color: status.color }}
+                  >
                     {status.label}
                   </span>
                 </div>
 
                 <div className="dest-card-info">
-                  <h3 className="dest-card-title">{booking.tour.name}</h3>
+                  <h3 className="dest-card-title">{tourName}</h3>
 
                   <div className="dest-card-details">
                     <div className="dest-detail">
                       <span className="dest-detail-label">Date</span>
-                      <span className="dest-detail-value">{formatDate(booking.date)}</span>
+                      <span className="dest-detail-value">{formatDate(booking.booking_date)}</span>
                     </div>
                     <div className="dest-detail">
                       <span className="dest-detail-label">Persons</span>
@@ -103,7 +247,7 @@ export default function DestinationsPage({ bookings }: DestinationsPageProps) {
                     </div>
                     <div className="dest-detail">
                       <span className="dest-detail-label">Name</span>
-                      <span className="dest-detail-value">{booking.fullName}</span>
+                      <span className="dest-detail-value">{booking.full_name}</span>
                     </div>
                     <div className="dest-detail">
                       <span className="dest-detail-label">Email</span>
@@ -120,16 +264,37 @@ export default function DestinationsPage({ bookings }: DestinationsPageProps) {
                       <p className="dest-total-label">Total Paid</p>
                       <p className="dest-total-price">{totalPrice(booking)}</p>
                     </div>
-                    <span className="dest-status-pill" style={{ background: status.bg, color: status.color }}>
+                    <span
+                      className="dest-status-pill"
+                      style={{ background: status.bg, color: status.color }}
+                    >
                       {status.label}
                     </span>
                   </div>
-                </div>
 
+                  {hasItinerary && (
+                    <button
+                      className="dest-itinerary-btn"
+                      onClick={() => setModalBooking(booking)}
+                    >
+                      <span>🗓</span>
+                      <span>View Itinerary</span>
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {modalBooking && (
+        <ItineraryModal
+          bookingId={modalBooking.tour_id}
+          tourName={TOUR_MAP[modalBooking.tour_id]?.name || "Tour"}
+          tourImage={getTourImage(TOUR_MAP[modalBooking.tour_id]?.name || "")}
+          onClose={() => setModalBooking(null)}
+        />
       )}
     </div>
   );

@@ -34,7 +34,13 @@ function App() {
   const handleAuthSuccess = (loggedInUser: User) => {
     setUser(loggedInUser);
     setModalType(null);
-    setCurrentPage("tours");
+
+    if (currentPage === "destinations") {
+      setCurrentPage("home");
+      setTimeout(() => setCurrentPage("destinations"), 0);
+    } else {
+      setCurrentPage("tours");
+    }
   };
 
   const handleLogout = () => {
@@ -48,7 +54,6 @@ function App() {
   };
 
   const handleConfirmBooking = (booking: BookingData) => {
-    setBookings((prev) => [...prev, booking]);
     setSchedules((prev) => {
       const updated = { ...prev };
       const tourDates = updated[booking.tour.name];
@@ -80,7 +85,7 @@ function App() {
         <ToursPage onBook={(tour) => setBookingTour(tour)} />
       )}
       {currentPage === "destinations" && (
-        <DestinationsPage userId={user?.id ?? ""} bookings={bookings} />
+        <DestinationsPage userId={user?.id ?? null } />
       )}
 
       {modalType && (
