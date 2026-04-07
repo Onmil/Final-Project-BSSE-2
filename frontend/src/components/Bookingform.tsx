@@ -5,37 +5,19 @@ import { Tour, BookingData, TourSchedule, TourDate } from "../types";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://localhost:5000";
 
-interface Tour {
-  title: string;
-  price: string;
-  image: string;
-  id?: number;
-}
-
 interface BookingFormProps {
   tour: Tour;
   onClose: () => void;
   onConfirm: (booking: BookingData) => void;
   schedules: TourSchedule;
-  userId: number;
+  userUuid: string | null;
   onGoToDestinations: () => void;
 }
 
-export interface BookingData {
-  id: string;
-  tour: Tour;
-  fullName: string;
-  email: string;
-  phone: string;
-  persons: number;
-  date: string;
-  status: "confirmed";
-  userUuid?: string | null; // <-- optional UUID
-}
 
 type Step = "form" | "success";
 
-export default function BookingForm({ tour, onClose, onConfirm, schedules, userUuid }: BookingFormProps) {
+export default function BookingForm({ tour, onClose, onConfirm, schedules, userUuid, onGoToDestinations }: BookingFormProps) {
   const [step, setStep] = useState<Step>("form");
   const [form, setForm] = useState({
     fullName: "",
@@ -114,6 +96,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
     const base = parseInt(tour.price.replace(/[^\d]/g, ""));
     return `₱${(base * form.persons).toLocaleString()}`;
   };
+
 
   return (
     <div className="bf-overlay" onClick={step === "success" ? onClose : undefined}>
