@@ -85,7 +85,7 @@ router.post('/login', async (req, res) => {
 
     console.log("LOGIN USER:", user); //temportary, check if id is present
 
-    // ✅ INCLUDE ID
+    //  INCLUDE ID
     res.json({
         id: user.id,
         name: user.name,

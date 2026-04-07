@@ -6,6 +6,7 @@ import palawan from "../assets/images/palaw_2k.jpg";
 import bacolod from "../assets/images/bcd_2k.png";
 import islagigantes from "../assets/images/isla_2k.png";
 import iloilo from "../assets/images/ilo_2k.png";
+import { Tour, BookingData, TourSchedule, TourDate } from "../types";
 
 const imageMap: Record<string, string> = {
   Guimaras: guim,
@@ -16,22 +17,6 @@ const imageMap: Record<string, string> = {
   "Isla Gigantes": islagigantes,
 };
 
-interface Tour {
-  title: string;
-  price: string;
-  image: string;
-}
-
-export interface BookingData {
-  id: string;
-  tour: Tour;
-  fullName: string;
-  email: string;
-  phone: string;
-  persons: number;
-  date: string;
-  status: "confirmed" | "pending" | "cancelled";
-}
 
 interface DestinationsPageProps {
   userId: string;
@@ -93,19 +78,19 @@ export default function DestinationsPage({ bookings }: DestinationsPageProps) {
         <div className="dest-grid">
           {bookings.map((booking) => {
             const status = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
-            const tourImage = getTourImage(booking.tour.title);
+            const tourImage = getTourImage(booking.tour.name);
 
             return (
               <div key={booking.id} className="dest-card">
                 <div className="dest-card-image">
-                  <img src={tourImage} alt={booking.tour.title} />
+                  <img src={tourImage} alt={booking.tour.name} />
                   <span className="dest-status-badge" style={{ background: status.bg, color: status.color }}>
                     {status.label}
                   </span>
                 </div>
 
                 <div className="dest-card-info">
-                  <h3 className="dest-card-title">{booking.tour.title}</h3>
+                  <h3 className="dest-card-title">{booking.tour.name}</h3>
 
                   <div className="dest-card-details">
                     <div className="dest-detail">

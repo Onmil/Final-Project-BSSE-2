@@ -99,6 +99,7 @@ function App() {
           onConfirm={handleConfirmBooking}
           schedules={schedules}
           userUuid={user?.id ?? null} // Pass UUID instead of email
+          onGoToDestinations={() => setCurrentPage("destinations")}
         />
       )}
     </>
