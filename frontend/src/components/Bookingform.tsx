@@ -54,7 +54,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
       if (isNaN(tourId)) throw new Error("Invalid tour selected");
 
       const payload = {
-        user_uuid: userUuid ?? null, // <-- correct UUID sent
+        user_uuid: userUuid ?? null,
         tour_id: tour.id,
         booking_date: form.date,
         full_name: form.fullName,
@@ -131,18 +131,27 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
             <div className="bf-row">
               <div className="bf-field">
                 <label>Full Name</label>
-                <input type="text" name="fullName" value={form.fullName} onChange={handleChange} required />
+                <input type="text" name="fullName" value={form.fullName} onChange={handleChange} required placeholder="Full Name"/>
               </div>
               <div className="bf-field">
                 <label>Email</label>
-                <input type="email" name="email" value={form.email} onChange={handleChange} required />
+                <input type="email" name="email" value={form.email} onChange={handleChange} required placeholder="peterparker2@gmail.com"/>
               </div>
             </div>
 
             <div className="bf-row">
               <div className="bf-field">
                 <label>Phone Number</label>
-                <input type="tel" name="phone" value={form.phone} onChange={handleChange} required />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  required
+                  placeholder="+63 912 345 6789"
+                  pattern="(\+63|0)9\d{9}"
+                  title="Enter a valid Philippine mobile number, either starting with +63 or 09 (11 digits total)"
+                />
               </div>
               <div className="bf-field">
                 <label>Available Date</label>

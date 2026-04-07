@@ -12,6 +12,7 @@ interface Tour {
   description: string;
   price: string;
   image: string;
+  inclusions: string[];
 }
 
 interface Package {
@@ -25,16 +26,46 @@ interface Package {
 }
 
 interface ToursPageProps {
-  onBook: (tour: Tour) => void;
+  onBook: (item: Tour | Package) => void;
 }
 
 const tours: Tour[] = [
-  { id: 1, name: "Guimaras", description: "Explore pristine beaches and taste the world-famous sweet mangoes of this peaceful island province.", price: "₱2,500", image: guim },
-  { id: 2, name: "Boracay", description: "Relax on powdery white sand beaches and enjoy the vibrant nightlife of this iconic tropical island.", price: "₱4,500", image: boracay },
-  { id: 3, name: "Palawan", description: "Discover crystal-clear lagoons, limestone cliffs, and the stunning Puerto Princesa Underground River.", price: "₱5,500", image: palawan },
-  { id: 4, name: "Iloilo", description: "Discover the City of Love with its stunning heritage churches, vibrant festivals, and world-class cuisine.", price: "₱2,500", image: iloilo },
-  { id: 5, name: "Bacolod", description: "The City of Smiles — famous for the MassKara Festival, sweet piaya, and warm Negrense hospitality.", price: "₱3,000", image: bacolod },
-  { id: 6, name: "Isla Gigantes", description: "A hidden gem in Iloilo featuring pristine beaches, giant scallops, and breathtaking island scenery.", price: "₱3,500", image: islagigantes },
+  {
+    id: 1, name: "Guimaras",
+    description: "Explore pristine beaches and taste the world-famous sweet mangoes of this peaceful island province.",
+    price: "₱2,500", image: guim,
+    inclusions: ["Round-trip boat transfer", "Island tour guide", "Mango farm visit", "Packed lunch"],
+  },
+  {
+    id: 2, name: "Boracay",
+    description: "Relax on powdery white sand beaches and enjoy the vibrant nightlife of this iconic tropical island.",
+    price: "₱4,500", image: boracay,
+    inclusions: ["Hotel accommodation", "Daily breakfast", "Beach activities", "Airport transfers"],
+  },
+  {
+    id: 3, name: "Palawan",
+    description: "Discover crystal-clear lagoons, limestone cliffs, and the stunning Puerto Princesa Underground River.",
+    price: "₱5,500", image: palawan,
+    inclusions: ["Hotel accommodation", "Daily breakfast", "Underground River tour", "Island hopping"],
+  },
+  {
+    id: 4, name: "Iloilo",
+    description: "Discover the City of Love with its stunning heritage churches, vibrant festivals, and world-class cuisine.",
+    price: "₱2,500", image: iloilo,
+    inclusions: ["Heritage church tour", "Food trip guide", "City tour", "Local transport"],
+  },
+  {
+    id: 5, name: "Bacolod",
+    description: "The City of Smiles — famous for the MassKara Festival, sweet piaya, and warm Negrense hospitality.",
+    price: "₱3,000", image: bacolod,
+    inclusions: ["The Ruins visit", "Chicken inasal food tour", "City tour guide", "Local transport"],
+  },
+  {
+    id: 6, name: "Isla Gigantes",
+    description: "A hidden gem in Iloilo featuring pristine beaches, giant scallops, and breathtaking island scenery.",
+    price: "₱3,500", image: islagigantes,
+    inclusions: ["Boat tour", "Scallop feast", "Island hopping", "Snorkeling gear"],
+  },
 ];
 
 const packages: Package[] = [
@@ -113,6 +144,14 @@ export default function ToursPage({ onBook }: ToursPageProps) {
             <div className="tour-info">
               <h3 className="tour-name">{tour.name}</h3>
               <p className="tour-desc">{tour.description}</p>
+
+              {/* Inclusions */}
+              <ul className="tour-inclusions">
+                {tour.inclusions.map((item) => (
+                  <li key={item}><span className="check">✓</span> {item}</li>
+                ))}
+              </ul>
+
               <div className="tour-footer">
                 <span className="tour-price">{tour.price} / person</span>
                 <button className="tour-btn" onClick={() => onBook(tour)}>Book Now</button>
@@ -163,11 +202,7 @@ export default function ToursPage({ onBook }: ToursPageProps) {
                 </div>
                 <button
                   className="tour-btn"
-                  onClick={() => {
-                    // Book first destination as default for simplicity
-                    const firstTour: Tour = tours.find(t => t.name === pkg.destinations[0])!;
-                    onBook(firstTour);
-                  }}
+                  onClick={() => onBook(pkg)}
                 >
                   Book Now
                 </button>
