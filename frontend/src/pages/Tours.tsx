@@ -1,3 +1,4 @@
+import { useState } from "react";
 import "./Tours.css";
 import guim from "../assets/images/guim_2k.jpg";
 import boracay from "../assets/images/bora.jpg";
@@ -5,6 +6,7 @@ import palawan from "../assets/images/palaw_2k.jpg";
 import bacolod from "../assets/images/bcd_2k.png";
 import islagigantes from "../assets/images/isla_2k.png";
 import iloilo from "../assets/images/ilo_2k.png";
+import { ITINERARIES } from "../data/Itineraries";
 
 interface Tour {
   id: number;
@@ -27,6 +29,80 @@ interface Package {
 
 interface ToursPageProps {
   onBook: (item: Tour | Package) => void;
+}
+
+interface ItineraryModalProps {
+  tourId: number;
+  tourName: string;
+  tourImage: string;
+  onClose: () => void;
+}
+
+function ItineraryModal({ tourId, tourName, tourImage, onClose }: ItineraryModalProps) {
+  const itinerary = ITINERARIES[tourId];
+  if (!itinerary) return null;
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return (
+    <div className="itin-backdrop" onClick={handleBackdropClick}>
+      <div className="itin-modal">
+        <div className="itin-modal-hero">
+          <img src={tourImage} alt={tourName} />
+          <div className="itin-modal-hero-overlay">
+            <p className="itin-modal-eyebrow">🗓 Itinerary</p>
+            <h2 className="itin-modal-title">{tourName}</h2>
+          </div>
+          <button className="itin-close-btn" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <div className="itin-modal-body">
+          <div className="itin-meetup-row">
+            <div className="itin-meetup-chip">
+              <span className="itin-meetup-icon">⏰</span>
+              <div>
+                <p className="itin-meetup-label">Meet-up Time</p>
+                <p className="itin-meetup-value">{itinerary.meetupTime}</p>
+              </div>
+            </div>
+            <div className="itin-meetup-chip">
+              <span className="itin-meetup-icon">📍</span>
+              <div>
+                <p className="itin-meetup-label">Meet-up Place</p>
+                <p className="itin-meetup-value">{itinerary.meetupPlace}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="itin-days">
+            {itinerary.days.map((day, dayIdx) => (
+              <div key={dayIdx} className="itin-day">
+                <div className="itin-day-header">
+                  <span className="itin-day-badge">{day.day}</span>
+                  <span className="itin-day-title">{day.title}</span>
+                </div>
+                <div className="itin-timeline">
+                  {day.activities.map((act, actIdx) => (
+                    <div key={actIdx} className="itin-timeline-item">
+                      <div className="itin-timeline-dot" />
+                      <div className="itin-timeline-content">
+                        <span className="itin-timeline-time">{act.time}</span>
+                        <span className="itin-timeline-activity">{act.activity}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 const tours: Tour[] = [
@@ -126,6 +202,18 @@ const packages: Package[] = [
 ];
 
 export default function ToursPage({ onBook }: ToursPageProps) {
+  const [itineraryModal, setItineraryModal] = useState<{
+    id: number;
+    name: string;
+    image: string;
+  } | null>(null);
+
+  const openItinerary = (id: number, name: string, image: string) => {
+    setItineraryModal({ id, name, image });
+  };
+
+  const closeItinerary = () => setItineraryModal(null);
+
   return (
     <div className="tours-page">
       {/* Single Destinations */}
@@ -136,29 +224,41 @@ export default function ToursPage({ onBook }: ToursPageProps) {
       </div>
 
       <div className="tours-grid">
-        {tours.map((tour) => (
-          <div key={tour.id} className="tour-card">
-            <div className="tour-image-wrapper">
-              <img src={tour.image} alt={tour.name} className="tour-image" />
-            </div>
-            <div className="tour-info">
-              <h3 className="tour-name">{tour.name}</h3>
-              <p className="tour-desc">{tour.description}</p>
+        {tours.map((tour) => {
+          const hasItinerary = !!ITINERARIES[tour.id];
+          return (
+            <div key={tour.id} className="tour-card">
+              <div className="tour-image-wrapper">
+                <img src={tour.image} alt={tour.name} className="tour-image" />
+              </div>
+              <div className="tour-info">
+                <h3 className="tour-name">{tour.name}</h3>
+                <p className="tour-desc">{tour.description}</p>
 
-              {/* Inclusions */}
-              <ul className="tour-inclusions">
-                {tour.inclusions.map((item) => (
-                  <li key={item}><span className="check">✓</span> {item}</li>
-                ))}
-              </ul>
+                <ul className="tour-inclusions">
+                  {tour.inclusions.map((item) => (
+                    <li key={item}><span className="check">✓</span> {item}</li>
+                  ))}
+                </ul>
 
-              <div className="tour-footer">
-                <span className="tour-price">{tour.price} / person</span>
-                <button className="tour-btn" onClick={() => onBook(tour)}>Book Now</button>
+                <div className="tour-footer">
+                  <span className="tour-price">{tour.price} / person</span>
+                  <div className="tour-actions">
+                    {hasItinerary && (
+                      <button
+                        className="tour-itinerary-btn"
+                        onClick={() => openItinerary(tour.id, tour.name, tour.image)}
+                      >
+                        🗓 Itinerary
+                      </button>
+                    )}
+                    <button className="tour-btn" onClick={() => onBook(tour)}>Book Now</button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Package Tours */}
@@ -169,48 +269,70 @@ export default function ToursPage({ onBook }: ToursPageProps) {
       </div>
 
       <div className="packages-grid">
-        {packages.map((pkg) => (
-          <div key={pkg.id} className="package-card">
-            <div className="package-images">
-              {pkg.images.map((img, i) => (
-                <img key={i} src={img} alt={pkg.destinations[i]} className="package-img" />
-              ))}
-            </div>
-
-            <div className="package-info">
-              <div className="package-top">
-                <h3 className="package-name">{pkg.name}</h3>
-                <span className="package-days">{pkg.days} Days</span>
-              </div>
-
-              <div className="package-destinations">
-                {pkg.destinations.map((d) => (
-                  <span key={d} className="dest-pill">{d}</span>
+        {packages.map((pkg) => {
+          const hasItinerary = !!ITINERARIES[pkg.id];
+          return (
+            <div key={pkg.id} className="package-card">
+              <div className="package-images">
+                {pkg.images.map((img, i) => (
+                  <img key={i} src={img} alt={pkg.destinations[i]} className="package-img" />
                 ))}
               </div>
 
-              <ul className="package-inclusions">
-                {pkg.inclusions.map((item) => (
-                  <li key={item}><span className="check">✓</span> {item}</li>
-                ))}
-              </ul>
-
-              <div className="package-footer">
-                <div>
-                  <p className="package-label">Total Price</p>
-                  <p className="package-price">{pkg.price} / person</p>
+              <div className="package-info">
+                <div className="package-top">
+                  <h3 className="package-name">{pkg.name}</h3>
+                  <span className="package-days">{pkg.days} Days</span>
                 </div>
-                <button
-                  className="tour-btn"
-                  onClick={() => onBook(pkg)}
-                >
-                  Book Now
-                </button>
+
+                <div className="package-destinations">
+                  {pkg.destinations.map((d) => (
+                    <span key={d} className="dest-pill">{d}</span>
+                  ))}
+                </div>
+
+                <ul className="package-inclusions">
+                  {pkg.inclusions.map((item) => (
+                    <li key={item}><span className="check">✓</span> {item}</li>
+                  ))}
+                </ul>
+
+                <div className="package-footer">
+                  <div>
+                    <p className="package-label">Total Price</p>
+                    <p className="package-price">{pkg.price} / person</p>
+                  </div>
+                  <div className="tour-actions">
+                    {hasItinerary && (
+                      <button
+                        className="tour-itinerary-btn"
+                        onClick={() => openItinerary(pkg.id, pkg.name, pkg.images[0])}
+                      >
+                        🗓 Itinerary
+                      </button>
+                    )}
+                    <button
+                      className="tour-btn"
+                      onClick={() => onBook(pkg)}
+                    >
+                      Book Now
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {itineraryModal && (
+        <ItineraryModal
+          tourId={itineraryModal.id}
+          tourName={itineraryModal.name}
+          tourImage={itineraryModal.image}
+          onClose={closeItinerary}
+        />
+      )}
     </div>
   );
 }

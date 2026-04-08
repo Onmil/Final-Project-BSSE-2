@@ -113,9 +113,9 @@
 .tour-btn {
   padding: 8px 20px;
   border-radius: 8px;
-  border: 1.5px solid #5bb8a0;
-  background: transparent;
-  color: #5bb8a0;
+  border: 1.5px solid #1b9979;
+  background: #1b9979;
+  color: #0a1628;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -123,7 +123,7 @@
 }
 
 .tour-btn:hover {
-  background: #5bb8a0;
+  background: #52f9cf;
   color: #0a1628;
 }
 
@@ -292,4 +292,31 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tour-itinerary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1.5px solid #5bb8a0;
+  background: transparent;
+  color: #5bb8a0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+
+.tour-itinerary-btn:hover {
+  background: #5bb8a0;
+  color: #0a1628;
 }
