@@ -12,6 +12,7 @@ router.post('/', async (req, res) => {
     phone,
     persons,
     status,
+    payment_method,
     user_uuid, // <-- optional: pass logged-in user's UUID from Supabase Auth
   } = req.body;
 
@@ -29,6 +30,7 @@ router.post('/', async (req, res) => {
           phone,
           persons,
           status,
+          payment_method: payment_method || null,
         },
       ])
       .select();
@@ -38,7 +40,7 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: error.message });
     }
 
-    res.json(data);
+    res.json(data[0]);
   } catch (err) {
     console.error("Server error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -58,6 +60,29 @@ router.get('/', async (req, res) => {
     }
 
     res.json(data);
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.patch('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+ 
+  try {
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status })
+      .eq('id', id)
+      .select();
+ 
+    if (error) {
+      console.error("Supabase update error:", error);
+      return res.status(500).json({ error: error.message });
+    }
+ 
+    res.json(data[0]);
   } catch (err) {
     console.error("Server error:", err);
     res.status(500).json({ error: "Internal server error" });
