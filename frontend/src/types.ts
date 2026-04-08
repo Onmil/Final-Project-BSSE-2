@@ -17,7 +17,7 @@ export interface BookingData {
   phone: string;
   persons: number;
   date: string;
-  status: "confirmed";
+  status: "confirmed" | "pending" | "cancelled";
 }
 
 // Tour schedule types

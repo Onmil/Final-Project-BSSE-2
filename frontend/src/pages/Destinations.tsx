@@ -33,6 +33,13 @@ const TOUR_MAP: Record<number, { name: string; price: string }> = {
   106: { name: "Visayas Grand Tour", price: "₱14,500" },
 };
 
+const PAYMENT_LABELS: Record<string, { icon: string; label: string }> = {
+  gcash:          { icon: "💙", label: "GCash" },
+  maya:           { icon: "💚", label: "Maya" },
+  card:           { icon: "💳", label: "Credit / Debit Card" },
+  pay_on_arrival: { icon: "🤝", label: "Pay on Arrival" },
+};
+
 interface BookingRow {
   id: number;
   tour_id: number;
@@ -43,15 +50,17 @@ interface BookingRow {
   phone: string;
   persons: number;
   user_id: string;
+  payment_method: string | null;
 }
 
 interface DestinationsPageProps {
   userId: string | null;
+  refreshKey?: number;
 }
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: "Confirmed", bg: "#e6f9f2", color: "#0f7a52" },
-  pending: { label: "Pending", bg: "#fff7e0", color: "#b07d00" },
+  pending:   { label: "Pending",   bg: "#fff7e0", color: "#b07d00" },
   cancelled: { label: "Cancelled", bg: "#fdecea", color: "#c0392b" },
 };
 
@@ -80,9 +89,7 @@ function ItineraryModal({ bookingId, tourName, tourImage, onClose }: ItineraryMo
             <p className="itin-modal-eyebrow">🗓 Itinerary</p>
             <h2 className="itin-modal-title">{tourName}</h2>
           </div>
-          <button className="itin-close-btn" onClick={onClose} aria-label="Close">
-            ✕
-          </button>
+          <button className="itin-close-btn" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
         <div className="itin-modal-body">
@@ -130,7 +137,7 @@ function ItineraryModal({ bookingId, tourName, tourImage, onClose }: ItineraryMo
   );
 }
 
-export default function DestinationsPage({ userId }: DestinationsPageProps) {
+export default function DestinationsPage({ userId, refreshKey = 0 }: DestinationsPageProps) {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalBooking, setModalBooking] = useState<BookingRow | null>(null);
@@ -148,7 +155,8 @@ export default function DestinationsPage({ userId }: DestinationsPageProps) {
       const { data, error } = await supabase
         .from("bookings")
         .select("*")
-        .eq("user_id", userId);
+        .eq("user_id", userId)
+        .order("id", { ascending: false });
 
       if (error) {
         console.error("Error fetching bookings:", error);
@@ -161,17 +169,11 @@ export default function DestinationsPage({ userId }: DestinationsPageProps) {
     };
 
     fetchBookings();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   useEffect(() => {
-    if (modalBooking) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    document.body.style.overflow = modalBooking ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
   }, [modalBooking]);
 
   const formatDate = (dateStr: string) =>
@@ -220,6 +222,9 @@ export default function DestinationsPage({ userId }: DestinationsPageProps) {
             const tourImage = getTourImage(tourName);
             const status = STATUS_STYLES[booking.status] || STATUS_STYLES.pending;
             const hasItinerary = !!ITINERARIES[booking.tour_id];
+            const payment = booking.payment_method
+              ? PAYMENT_LABELS[booking.payment_method]
+              : null;
 
             return (
               <div key={booking.id} className="dest-card">
@@ -257,11 +262,28 @@ export default function DestinationsPage({ userId }: DestinationsPageProps) {
                       <span className="dest-detail-label">Phone</span>
                       <span className="dest-detail-value">{booking.phone}</span>
                     </div>
+                    <div className="dest-detail">
+                      <span className="dest-detail-label">Payment</span>
+                      <span className="dest-payment-value">
+                        {payment ? (
+                          <>
+                            <span className="dest-payment-icon">{payment.icon}</span>
+                            {payment.label}
+                          </>
+                        ) : "—"}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="dest-card-footer">
                     <div>
-                      <p className="dest-total-label">Total Paid</p>
+                      <p className="dest-total-label">
+                        {booking.status === "confirmed"
+                          ? "Total Paid"
+                          : booking.status === "pending"
+                          ? "Total Due"
+                          : "Total"}
+                      </p>
                       <p className="dest-total-price">{totalPrice(booking)}</p>
                     </div>
                     <span

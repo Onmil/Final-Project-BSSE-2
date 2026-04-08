@@ -178,6 +178,25 @@
   word-break: break-word;
 }
 
+.dest-payment-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 3px 10px 3px 8px;
+  letter-spacing: 0.02em;
+}
+
+.dest-payment-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
 .dest-card-footer {
   display: flex;
   align-items: center;
