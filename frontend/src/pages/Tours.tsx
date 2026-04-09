@@ -232,7 +232,10 @@ export default function ToursPage({ onBook }: ToursPageProps) {
                 <img src={tour.image} alt={tour.name} className="tour-image" />
               </div>
               <div className="tour-info">
-                <h3 className="tour-name">{tour.name}</h3>
+                <div className="tour-top">
+                  <h3 className="tour-name">{tour.name}</h3>
+                  <span className="package-days">1 Day</span>
+                </div>
                 <p className="tour-desc">{tour.description}</p>
 
                 <ul className="tour-inclusions">
@@ -242,7 +245,10 @@ export default function ToursPage({ onBook }: ToursPageProps) {
                 </ul>
 
                 <div className="tour-footer">
-                  <span className="tour-price">{tour.price} / person</span>
+                  <div>
+                    <p className="package-label">Total Price</p>
+                    <span className="tour-price">{tour.price} / person</span>
+                  </div>
                   <div className="tour-actions">
                     {hasItinerary && (
                       <button

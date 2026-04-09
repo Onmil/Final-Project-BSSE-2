@@ -38,7 +38,7 @@
 
 .tours-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
 }
 
@@ -106,8 +106,8 @@
 
 .tour-price {
   color: #5bb8a0;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
 }
 
 .tour-btn {
@@ -319,4 +319,11 @@
 .tour-itinerary-btn:hover {
   background: #5bb8a0;
   color: #0a1628;
+}
+
+.tour-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
