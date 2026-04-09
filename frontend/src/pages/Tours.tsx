@@ -115,13 +115,13 @@ const tours: Tour[] = [
   {
     id: 2, name: "Boracay",
     description: "Relax on powdery white sand beaches and enjoy the vibrant nightlife of this iconic tropical island.",
-    price: "₱4,500", image: boracay,
+    price: "₱7,500", image: boracay,
     inclusions: ["Hotel accommodation", "Daily breakfast", "Beach activities", "Airport transfers"],
   },
   {
     id: 3, name: "Palawan",
     description: "Discover crystal-clear lagoons, limestone cliffs, and the stunning Puerto Princesa Underground River.",
-    price: "₱5,500", image: palawan,
+    price: "₱10,000", image: palawan,
     inclusions: ["Hotel accommodation", "Daily breakfast", "Underground River tour", "Island hopping"],
   },
   {
