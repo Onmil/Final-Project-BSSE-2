@@ -153,23 +153,23 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
           <form onSubmit={handleSubmit} className="bf-form">
             <div className="bf-row">
               <div className="bf-field">
-                <label>Full Name</label>
-                <input type="text" name="fullName" value={form.fullName} onChange={handleChange} required placeholder="Full Name" />
+                <label htmlFor="fullName">Full Name</label>
+                <input id="fullName" type="text" name="fullName" value={form.fullName} onChange={handleChange} required placeholder="Full Name" />
               </div>
               <div className="bf-field">
-                <label>Email</label>
-                <input type="email" name="email" value={form.email} onChange={handleChange} required placeholder="peterparker@gmail.com" />
+                <label htmlFor="email">Email</label>
+                <input id="email" type="email" name="email" value={form.email} onChange={handleChange} required placeholder="peterparker@gmail.com" />
               </div>
             </div>
 
             <div className="bf-row">
               <div className="bf-field">
-                <label>Phone Number</label>
-                <input type="tel" name="phone" value={form.phone} onChange={handleChange} required placeholder="+63 912 345 6789" pattern="(\+63|0)9\d{9}" title="Enter a valid Philippine mobile number" />
+                <label htmlFor="phone">Phone Number</label>
+                <input id="phone" type="tel" name="phone" value={form.phone} onChange={handleChange} required placeholder="+63 912 345 6789" pattern="(\+63|0)9\d{9}" title="Enter a valid Philippine mobile number" />
               </div>
               <div className="bf-field">
-                <label>Available Date</label>
-                <select name="date" value={form.date} onChange={handleChange} required>
+                <label htmlFor="date">Available Date</label>
+                <select id="date" name="date" value={form.date} onChange={handleChange} required>
                   <option value="">Select a date</option>
                   {dates.map((d) => (
                     <option key={d.date} value={d.date} disabled={d.spotsLeft === 0}>
@@ -181,7 +181,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
             </div>
 
             <div className="bf-field">
-              <label>Number of Persons{selectedDate && ` (max ${selectedDate.spotsLeft})`}</label>
+              <label htmlFor="persons">Number of Persons{selectedDate && ` (max ${selectedDate.spotsLeft})`}</label>
               <div className="bf-counter">
                 <button type="button" onClick={() => setForm((f) => ({ ...f, persons: Math.max(1, f.persons - 1) }))}>−</button>
                 <span>{form.persons}</span>
