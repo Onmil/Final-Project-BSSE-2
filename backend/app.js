@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+const bookingsRoutes = require('./routes/bookings');
 const toursRoutes = require('./routes/tours');
 const usersRoutes = require('./routes/users');
 
@@ -9,7 +10,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.use('/bookings', bookingsRoutes);
 app.use('/tours', toursRoutes);
 app.use('/users', usersRoutes);
 

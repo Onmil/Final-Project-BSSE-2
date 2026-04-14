@@ -60,3 +60,9 @@ npx cypress open
 cd backend
 npm test
 ```
+
+## Run Storybook testing:
+```
+cd frontend
+npm run storybook
+```
