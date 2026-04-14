@@ -13,34 +13,61 @@ router.post('/', async (req, res) => {
     persons,
     status,
     payment_method,
-    user_uuid, // <-- optional: pass logged-in user's UUID from Supabase Auth
+    user_uuid,
+    amount // IMPORTANT: we will use this for payments
   } = req.body;
 
   try {
-    // Insert booking
-    const { data, error } = await supabase
+    // STEP 1: Insert booking
+    const { data: bookingData, error: bookingError } = await supabase
       .from('bookings')
       .insert([
         {
-          user_id: user_uuid || null, // leave null if guest, otherwise pass uuid
+          user_id: user_uuid || null,
           tour_id,
           booking_date,
           full_name,
-          email,   // email is stored as text
+          email,
           phone,
           persons,
           status,
           payment_method: payment_method || null,
         },
       ])
-      .select();
+      .select()
+      .single();
 
-    if (error) {
-      console.error("Supabase insert error:", error);
-      return res.status(500).json({ error: error.message });
+    if (bookingError) {
+      console.error("Booking insert error:", bookingError);
+      return res.status(500).json({ error: bookingError.message });
     }
 
-    res.json(data[0]);
+    // STEP 2: Insert payment record
+    const { error: paymentError } = await supabase
+      .from('payments')
+      .insert([
+        {
+          booking_id: bookingData.id,
+          amount: amount || 0,
+          method: payment_method,
+          paid_at:
+            payment_method === "pay_on_arrival"
+              ? null
+              : new Date().toISOString(),
+        },
+      ]);
+
+    if (paymentError) {
+      console.error("Payment insert error:", paymentError);
+      return res.status(500).json({ error: paymentError.message });
+    }
+
+    // STEP 3: Return response
+    res.json({
+      success: true,
+      booking: bookingData,
+    });
+
   } catch (err) {
     console.error("Server error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -69,19 +96,19 @@ router.get('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
- 
+
   try {
     const { data, error } = await supabase
       .from('bookings')
       .update({ status })
       .eq('id', id)
       .select();
- 
+
     if (error) {
       console.error("Supabase update error:", error);
       return res.status(500).json({ error: error.message });
     }
- 
+
     res.json(data[0]);
   } catch (err) {
     console.error("Server error:", err);

@@ -25,9 +25,9 @@ const PAYMENT_OPTIONS = [
 ] as const;
 
 const PAYMENT_LABELS: Record<string, { icon: string; label: string }> = {
-  gcash:          { icon: "💙", label: "GCash" },
-  maya:           { icon: "💚", label: "Maya" },
-  card:           { icon: "💳", label: "Credit / Debit Card" },
+  gcash: { icon: "💙", label: "GCash" },
+  maya: { icon: "💚", label: "Maya" },
+  card: { icon: "💳", label: "Credit / Debit Card" },
   pay_on_arrival: { icon: "🤝", label: "Pay on Arrival" },
 };
 
@@ -62,6 +62,11 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
     setStep("payment");
   };
 
+  const getAmount = () => {
+    const base = parseInt(tour.price.replace(/[^\d]/g, ""));
+    return base * Number(form.persons);
+  };
+
   const handlePayment = async () => {
     if (!selectedPayment) return;
     setSubmitting(true);
@@ -79,6 +84,7 @@ export default function BookingForm({ tour, onClose, onConfirm, schedules, userU
         persons: Number(form.persons),
         payment_method: selectedPayment,
         status: bookingStatus,
+        amount: getAmount(),
       };
 
       const response = await fetch(`${API_BASE}/bookings`, {
