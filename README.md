@@ -50,15 +50,20 @@ Storybook (UI components):
 npx sb init
 npm run storybook
 ```
-## Cypress (E2E testing):
+## PlayWright (E2E testing):
 ```
-npm install --save-dev cypress
-npx cypress open
+npm install -D @playwright/test
+npx playwright install
+npm init playwright
+
+to run: npx playwright test
+or if with ui
+npx playwright test --ui 
 ```
 ## Jest (backend testing):
 ```
 cd backend
-npm test
+npx jest tests/[filename]   // example usage: npx jest tests/users.test.js
 ```
 
 ## Run Storybook testing:
