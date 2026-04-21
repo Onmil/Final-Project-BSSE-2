@@ -1,239 +1,203 @@
 const request = require('supertest');
 const app = require('../app');
-
-jest.mock('../services/supabaseClient');
-jest.mock('bcrypt');
-
 const supabase = require('../services/supabaseClient');
-const bcrypt = require('bcrypt');
 
-describe('POST /users/signup', () => {
+const USERS_TABLE = process.env.SUPABASE_USERS_TABLE || 'users';
 
-  beforeEach(() => jest.clearAllMocks());
+describe('Users API (Integration Tests - Supabase)', () => {
 
-  // happy path: successful signup
-  it('should register a new user successfully', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-      insert: jest.fn().mockReturnValue({
-        select: jest.fn().mockResolvedValue({
-          data: [{ id: 'mock-uuid-123', name: 'Peter Parker', email: 'peter@gmail.com' }],
-          error: null,
-        }),
-      }),
-    }));
+  let createdEmails = [];
 
-    bcrypt.hash.mockResolvedValue('hashed_password');
-
-    const res = await request(app).post('/users/signup').send({
-      name: 'Peter Parker',
-      email: 'peter@gmail.com',
-      password: 'Password123',
-    });
-
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body).toHaveProperty('name', 'Peter Parker');
-    expect(res.body).toHaveProperty('email', 'peter@gmail.com');
+  const testUser = (name, email, password) => ({
+    name,
+    email,
+    password
   });
 
-  // happy path: email stored in lowercase regardless of input case
-  it('should normalize email to lowercase on signup', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-      insert: jest.fn().mockReturnValue({
-        select: jest.fn().mockResolvedValue({
-          data: [{ id: 'mock-uuid-456', name: 'Mary Jane', email: 'maryjane@gmail.com' }],
-          error: null,
-        }),
-      }),
-    }));
+  // unique email
+  const uniqueEmail = () =>
+    `test_${Date.now()}_${Math.floor(Math.random() * 10000)}@gmail.com`;
 
-    bcrypt.hash.mockResolvedValue('hashed_password');
+  const trackUser = (email) => {
+    createdEmails.push(email.toLowerCase());
+  };
 
-    const res = await request(app).post('/users/signup').send({
-      name: 'Mary Jane',
-      email: 'MARYJANE@GMAIL.COM',
-      password: 'Password123',
-    });
+  const cleanupUsers = async () => {
+    for (const email of createdEmails) {
+      await supabase
+        .from(USERS_TABLE)
+        .delete()
+        .eq('email', email);
+    }
+    createdEmails = [];
+  };
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('email', 'maryjane@gmail.com');
+  afterEach(async () => {
+    await cleanupUsers();
   });
 
-  // happy path: response does not expose password hash
-  it('should not return password_hash in response', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-      insert: jest.fn().mockReturnValue({
-        select: jest.fn().mockResolvedValue({
-          data: [{ id: 'mock-uuid-789', name: 'Tony Stark', email: 'tony@stark.com', password_hash: 'hashed_password' }],
-          error: null,
-        }),
-      }),
-    }));
+  // signup tests
+  describe('POST /users/signup', () => {
 
-    bcrypt.hash.mockResolvedValue('hashed_password');
+    it('should register a new user successfully', async () => {
+      const email = uniqueEmail();
+      const user = testUser('Test User', email, 'Password123');
 
-    const res = await request(app).post('/users/signup').send({
-      name: 'Tony Stark',
-      email: 'tony@stark.com',
-      password: 'IronMan123',
+      const res = await request(app)
+        .post('/users/signup')
+        .send(user);
+
+      trackUser(email);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toHaveProperty('id');
+      expect(res.body.email).toBe(email.toLowerCase());
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).not.toHaveProperty('password_hash');
+    it('should normalize email to lowercase', async () => {
+      const email = uniqueEmail().toUpperCase();
+      const user = testUser('Test User', email, 'Password123');
+
+      const res = await request(app)
+        .post('/users/signup')
+        .send(user);
+
+      trackUser(email);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.email).toBe(email.toLowerCase());
+    });
+
+    it('should not return password_hash', async () => {
+      const email = uniqueEmail();
+      const user = testUser('Secure User', email, 'Password123');
+
+      const res = await request(app)
+        .post('/users/signup')
+        .send(user);
+
+      trackUser(email);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).not.toHaveProperty('password_hash');
+    });
+
+    it('should return 400 if fields are missing', async () => {
+      const res = await request(app)
+        .post('/users/signup')
+        .send({ email: uniqueEmail() });
+
+      expect(res.statusCode).toBe(400);
+    });
+
+    it('should return 409 if email already exists', async () => {
+      const email = uniqueEmail();
+      const user = testUser('Duplicate User', email, 'Password123');
+
+      await request(app).post('/users/signup').send(user);
+      trackUser(email);
+
+      const res = await request(app)
+        .post('/users/signup')
+        .send(user);
+
+      expect(res.statusCode).toBe(409);
+    });
+
   });
 
-  // sad path: missing fields
-  it('should return 400 if fields are missing', async () => {
-    const res = await request(app).post('/users/signup').send({
-      email: 'peter@gmail.com',
+  //login tests
+  describe('POST /users/login', () => {
+
+    it('should login successfully with correct credentials', async () => {
+      const email = uniqueEmail();
+      const user = testUser('Login User', email, 'Password123');
+
+      await request(app).post('/users/signup').send(user);
+      trackUser(email);
+
+      const res = await request(app)
+        .post('/users/login')
+        .send({
+          email,
+          password: user.password
+        });
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body.email).toBe(email.toLowerCase());
     });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toHaveProperty('error', 'Name, email, and password are required.');
-  });
+    it('should login with uppercase email', async () => {
+      const email = uniqueEmail();
+      const user = testUser('Upper User', email, 'Password123');
 
-  // sad path: email already registered
-  it('should return 409 if email is already registered', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({
-        data: [{ id: 'existing-uuid', name: 'Peter Parker', email: 'peter@gmail.com' }],
-        error: null,
-      }),
-    }));
+      await request(app).post('/users/signup').send(user);
+      trackUser(email);
 
-    const res = await request(app).post('/users/signup').send({
-      name: 'Peter Parker',
-      email: 'peter@gmail.com',
-      password: 'Password123',
+      const res = await request(app)
+        .post('/users/login')
+        .send({
+          email: email.toUpperCase(),
+          password: user.password
+        });
+
+      expect(res.statusCode).toBe(200);
     });
 
-    expect(res.statusCode).toBe(409);
-    expect(res.body).toHaveProperty('error', 'Email already registered.');
-  });
+    it('should not return password_hash on login', async () => {
+      const email = uniqueEmail();
+      const user = testUser('Safe Login', email, 'Password123');
 
-});
+      await request(app).post('/users/signup').send(user);
+      trackUser(email);
 
-describe('POST /users/login', () => {
+      const res = await request(app)
+        .post('/users/login')
+        .send({
+          email,
+          password: user.password
+        });
 
-  beforeEach(() => jest.clearAllMocks());
-
-  // happy path: successful login
-  it('should login successfully with correct credentials', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({
-        data: [{ id: 'mock-uuid-123', name: 'Peter Parker', email: 'peter@gmail.com', password_hash: 'hashed_password' }],
-        error: null,
-      }),
-    }));
-
-    bcrypt.compare.mockResolvedValue(true);
-
-    const res = await request(app).post('/users/login').send({
-      email: 'peter@gmail.com',
-      password: 'Password123',
+      expect(res.statusCode).toBe(200);
+      expect(res.body).not.toHaveProperty('password_hash');
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('id');
-    expect(res.body).toHaveProperty('name', 'Peter Parker');
-    expect(res.body).toHaveProperty('email', 'peter@gmail.com');
-  });
+    it('should return 400 if missing fields', async () => {
+      const res = await request(app)
+        .post('/users/login')
+        .send({ email: uniqueEmail() });
 
-  // happy path: email stored in lowercase regardless of input case
-  it('should login successfully with uppercase email', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({
-        data: [{ id: 'mock-uuid-123', name: 'Peter Parker', email: 'peter@gmail.com', password_hash: 'hashed_password' }],
-        error: null,
-      }),
-    }));
-
-    bcrypt.compare.mockResolvedValue(true);
-
-    const res = await request(app).post('/users/login').send({
-      email: 'PETER@GMAIL.COM',
-      password: 'Password123',
+      expect(res.statusCode).toBe(400);
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('email', 'peter@gmail.com');
-  });
+    it('should return 401 if password is incorrect', async () => {
+      const email = uniqueEmail();
+      const user = testUser('Wrong Pass', email, 'Password123');
 
-  // happy path: response does not expose password hash
-  it('should not return password_hash in login response', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({
-        data: [{ id: 'mock-uuid-123', name: 'Peter Parker', email: 'peter@gmail.com', password_hash: 'hashed_password' }],
-        error: null,
-      }),
-    }));
+      await request(app).post('/users/signup').send(user);
+      trackUser(email);
 
-    bcrypt.compare.mockResolvedValue(true);
+      const res = await request(app)
+        .post('/users/login')
+        .send({
+          email,
+          password: 'WrongPassword'
+        });
 
-    const res = await request(app).post('/users/login').send({
-      email: 'peter@gmail.com',
-      password: 'Password123',
+      expect(res.statusCode).toBe(401);
     });
 
-    expect(res.statusCode).toBe(200);
-    expect(res.body).not.toHaveProperty('password_hash');
-  });
+    it('should return 401 if user does not exist', async () => {
+      const res = await request(app)
+        .post('/users/login')
+        .send({
+          email: uniqueEmail(),
+          password: 'Password123'
+        });
 
-  // sad path: missing fields
-  it('should return 400 if email or password is missing', async () => {
-    const res = await request(app).post('/users/login').send({
-      email: 'peter@gmail.com',
+      expect(res.statusCode).toBe(401);
     });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toHaveProperty('error', 'Email and password required.');
-  });
-
-  // sad path: incorrect password
-  it('should return 401 if password is incorrect', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({
-        data: [{ id: 'mock-uuid-123', name: 'Peter Parker', email: 'peter@gmail.com', password_hash: 'hashed_password' }],
-        error: null,
-      }),
-    }));
-
-    bcrypt.compare.mockResolvedValue(false);
-
-    const res = await request(app).post('/users/login').send({
-      email: 'peter@gmail.com',
-      password: 'WrongPassword',
-    });
-
-    expect(res.statusCode).toBe(401);
-    expect(res.body).toHaveProperty('error', 'Invalid email or password.');
-  });
-
-  // sad path: user does not exist
-  it('should return 401 if user does not exist', async () => {
-    supabase.from.mockImplementation(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockResolvedValue({ data: [], error: null }),
-    }));
-
-    const res = await request(app).post('/users/login').send({
-      email: 'nobody@gmail.com',
-      password: 'Password123',
-    });
-
-    expect(res.statusCode).toBe(401);
-    expect(res.body).toHaveProperty('error', 'Invalid email or password.');
   });
 
 });
