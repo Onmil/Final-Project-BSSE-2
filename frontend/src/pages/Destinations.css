@@ -1,3 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&display=swap');
+
+body {
+  font-family: "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 .dest-page {
   min-height: 100vh;
   background: #0a1628;
@@ -15,6 +23,7 @@
   font-weight: 700;
   letter-spacing: 0.25em;
   margin: 0 0 12px;
+  font-family: "Inter", sans-serif;
 }
 
 .dest-title {
@@ -23,11 +32,13 @@
   font-weight: 900;
   margin: 0 0 14px;
   letter-spacing: 0.02em;
+  font-family: "Montserrat", sans-serif;
 }
 
 .dest-subtitle {
   color: rgba(255, 255, 255, 0.55);
   font-size: 16px;
+  font-family: "Inter", sans-serif;
   margin: 0;
 }
 
@@ -40,6 +51,7 @@
   min-height: 300px;
   color: rgba(255, 255, 255, 0.6);
   font-size: 15px;
+  font-family: "Inter", sans-serif;
 }
 
 .dest-spinner {
@@ -57,10 +69,12 @@
 
 .dest-error {
   color: #e74c3c;
+  font-family: "Inter", sans-serif;
 }
 
 .dest-empty {
   text-align: center;
+  font-family: "Inter", sans-serif;
 }
 
 .dest-empty-icon {
@@ -71,6 +85,7 @@
   color: #fff;
   font-size: 22px;
   margin: 0;
+  font-family: "Montserrat", sans-serif;
 }
 
 .dest-empty p {
@@ -140,6 +155,7 @@
   font-size: 20px;
   font-weight: 800;
   margin: 0;
+  font-family: "Montserrat", sans-serif;
 }
 
 .dest-card-details {
@@ -167,6 +183,7 @@
   color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  font-family: "Inter", sans-serif;
 }
 
 .dest-detail-value {
@@ -176,6 +193,7 @@
   text-align: right;
   max-width: 60%;
   word-break: break-word;
+  font-family: "Inter", sans-serif;
 }
 
 .dest-payment-value {
@@ -213,6 +231,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0 0 4px;
+  font-family: "Inter", sans-serif;
 }
 
 .dest-total-price {
@@ -220,6 +239,7 @@
   font-weight: 800;
   color: #5bb8a0;
   margin: 0;
+  font-family: "Montserrat", sans-serif;
 }
 
 .dest-status-pill {
@@ -227,6 +247,7 @@
   font-weight: 700;
   padding: 5px 14px;
   border-radius: 20px;
+  font-family: "Inter", sans-serif;
 }
 
 @media (max-width: 1100px) {
@@ -251,8 +272,9 @@
   background: #f0f7ff;
   color: #122035;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
+  font-family: "Inter", sans-serif;
   transition: background 0.18s, border-color 0.18s, transform 0.12s;
 }
 
@@ -341,6 +363,7 @@
   color: #fff;
   margin: 0;
   line-height: 1.15;
+  font-family: "Montserrat", sans-serif;
 }
 
 .itin-close-btn {

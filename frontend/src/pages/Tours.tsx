@@ -216,7 +216,6 @@ export default function ToursPage({ onBook }: ToursPageProps) {
 
   return (
     <div className="tours-page">
-      {/* Single Destinations */}
       <div className="tours-header">
         <p className="tours-eyebrow">EXPLORE THE PHILIPPINES</p>
         <h1 className="tours-title">Our Tours</h1>
@@ -225,6 +224,8 @@ export default function ToursPage({ onBook }: ToursPageProps) {
 
       <div className="tours-grid">
         {tours.map((tour) => {
+          const itinerary = ITINERARIES[tour.id];
+          const daysCount = itinerary?.days?.length || 1;
           const hasItinerary = !!ITINERARIES[tour.id];
           return (
             <div key={tour.id} className="tour-card">
@@ -234,7 +235,10 @@ export default function ToursPage({ onBook }: ToursPageProps) {
               <div className="tour-info">
                 <div className="tour-top">
                   <h3 className="tour-name">{tour.name}</h3>
-                  <span className="package-days">1 Day</span>
+
+                  <span className="package-days">
+                    {daysCount} {daysCount === 1 ? "Day" : "Days"}
+                  </span>
                 </div>
                 <p className="tour-desc">{tour.description}</p>
 
@@ -267,7 +271,6 @@ export default function ToursPage({ onBook }: ToursPageProps) {
         })}
       </div>
 
-      {/* Package Tours */}
       <div className="packages-header">
         <p className="tours-eyebrow">BUNDLED DEALS</p>
         <h2 className="tours-title">Package Tours</h2>
