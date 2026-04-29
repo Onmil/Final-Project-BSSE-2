@@ -2,6 +2,9 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "cypress": {
+    "tsConfig": "tsconfig.cypress.json"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.102.1",
     "@testing-library/dom": "^10.4.1",
@@ -9,9 +12,9 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
-    "@types/node": "^16.18.126",
     "axios": "^1.13.6",
     "bootstrap": "^5.3.8",
+    "cypress": "^13.17.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.1",
@@ -47,14 +50,16 @@
     ]
   },
   "devDependencies": {
+    "@cypress/browserify-preprocessor": "^3.0.2",
     "@playwright/test": "^1.59.1",
     "@storybook/addon-a11y": "^10.3.5",
     "@storybook/addon-docs": "^10.3.5",
     "@storybook/addon-onboarding": "^10.3.5",
+    "@storybook/jest": "^0.2.3",
     "@storybook/preset-create-react-app": "^10.3.5",
     "@storybook/react-webpack5": "^10.3.5",
-    "@storybook/jest": "^0.2.3",
     "@storybook/testing-library": "^0.2.2",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
