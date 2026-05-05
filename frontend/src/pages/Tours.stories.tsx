@@ -16,14 +16,12 @@ const mockOnBook = (item: any) => {
   console.log("BOOKING TRIGGERED:", item);
 };
 
-/* ---------------- BASIC RENDER ---------------- */
 export const Default: Story = {
   args: {
     onBook: mockOnBook,
   },
 };
 
-/* ---------------- BOOK BUTTON CLICK ---------------- */
 export const TourBookingInteraction: Story = {
   args: {
     onBook: mockOnBook,
@@ -31,20 +29,15 @@ export const TourBookingInteraction: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const bookButtons = await canvas.findAllByText(/book now/i);
+    const buttons = await canvas.findAllByText("Book Now");
+    await userEvent.click(buttons[0]);
 
-    await userEvent.click(bookButtons[0]);
-
-    // wait for potential state update / modal trigger
     await waitFor(() => {
-      expect(mockOnBook).toBeDefined();
+      expect(buttons.length).toBeGreaterThan(0);
     });
-
-    expect(bookButtons.length).toBeGreaterThan(0);
   },
 };
 
-/* ---------------- ITINERARY MODAL ---------------- */
 export const OpenItineraryModal: Story = {
   args: {
     onBook: mockOnBook,
@@ -52,23 +45,19 @@ export const OpenItineraryModal: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const itineraryButtons = await canvas.findAllByText(/itinerary/i);
-
-    if (!itineraryButtons.length) {
-      throw new Error("No itinerary buttons found");
-    }
-
+    // click first itinerary button only (still safe)
+    const itineraryButtons = await canvas.findAllByText("🗓 Itinerary");
     await userEvent.click(itineraryButtons[0]);
 
-    // IMPORTANT: wait for modal render
+    // IMPORTANT FIX:
+    // target MODAL, not generic text
     await waitFor(() => {
-      const modal = canvas.getByText(/itinerary/i);
-      expect(modal).toBeInTheDocument();
+      const modal = canvasElement.querySelector(".itin-modal");
+      expect(modal).toBeTruthy();
     });
   },
 };
 
-/* ---------------- PACKAGE INTERACTION ---------------- */
 export const PackageInteraction: Story = {
   args: {
     onBook: mockOnBook,
@@ -76,19 +65,11 @@ export const PackageInteraction: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const bookButtons = await canvas.findAllByText(/book now/i);
-
-    await userEvent.click(bookButtons[bookButtons.length - 1]);
+    const buttons = await canvas.findAllByText("Book Now");
+    await userEvent.click(buttons[buttons.length - 1]);
 
     await waitFor(() => {
-      expect(bookButtons.length).toBeGreaterThan(0);
+      expect(buttons.length).toBeGreaterThan(0);
     });
-  },
-};
-
-/* ---------------- VISUAL ONLY ---------------- */
-export const VisualCheck: Story = {
-  args: {
-    onBook: mockOnBook,
   },
 };
