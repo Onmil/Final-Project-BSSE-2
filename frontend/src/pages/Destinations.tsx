@@ -9,6 +9,10 @@ import iloilo from "../assets/images/ilo_2k.png";
 import { supabase } from "../supabaseClient";
 import { ITINERARIES } from "../data/Itineraries";
 
+const getMockSupabase = () => {
+  return (window as any).__SUPABASE_MOCK__;
+};
+
 const imageMap: Record<string, string> = {
   Guimaras: guim,
   Boracay: boracay,
@@ -34,9 +38,9 @@ const TOUR_MAP: Record<number, { name: string; price: string }> = {
 };
 
 const PAYMENT_LABELS: Record<string, { icon: string; label: string }> = {
-  gcash:          { icon: "💙", label: "GCash" },
-  maya:           { icon: "💚", label: "Maya" },
-  card:           { icon: "💳", label: "Credit / Debit Card" },
+  gcash: { icon: "💙", label: "GCash" },
+  maya: { icon: "💚", label: "Maya" },
+  card: { icon: "💳", label: "Credit / Debit Card" },
   pay_on_arrival: { icon: "🤝", label: "Pay on Arrival" },
 };
 
@@ -60,7 +64,7 @@ interface DestinationsPageProps {
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
   confirmed: { label: "Confirmed", bg: "#e6f9f2", color: "#0f7a52" },
-  pending:   { label: "Pending",   bg: "#fff7e0", color: "#b07d00" },
+  pending: { label: "Pending", bg: "#fff7e0", color: "#b07d00" },
   cancelled: { label: "Cancelled", bg: "#fdecea", color: "#c0392b" },
 };
 
@@ -152,11 +156,26 @@ export default function DestinationsPage({ userId, refreshKey = 0 }: Destination
 
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("user_id", userId)
-        .order("id", { ascending: false });
+// for storybook testing. Changed  it for mocks. 
+
+      let data: any = null;
+      let error: any = null;
+
+      const mock = getMockSupabase();
+
+      if (mock) {
+        data = mock.data;
+        error = mock.error;
+      } else {
+        const res = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("user_id", userId)
+          .order("id", { ascending: false });
+
+        data = res.data;
+        error = res.error;
+      }
 
       if (error) {
         console.error("Error fetching bookings:", error);
@@ -281,8 +300,8 @@ export default function DestinationsPage({ userId, refreshKey = 0 }: Destination
                         {booking.status === "confirmed"
                           ? "Total Paid"
                           : booking.status === "pending"
-                          ? "Total Due"
-                          : "Total"}
+                            ? "Total Due"
+                            : "Total"}
                       </p>
                       <p className="dest-total-price">{totalPrice(booking)}</p>
                     </div>
