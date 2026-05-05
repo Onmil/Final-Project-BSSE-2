@@ -2,87 +2,128 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../services/supabaseClient');
 
-// POST booking
+const allowedPaymentMethods = ["gcash", "card", "pay_on_arrival"];
+
+// Optional: define allowed tour IDs since you removed tours table
+const VALID_TOUR_IDS = new Set([1,2,3,4,5,6,101,102,103,104,105,106]);
+
 router.post('/', async (req, res) => {
-  const {
-    tour_id,
-    booking_date,
-    full_name,
-    email,
-    phone,
-    persons,
-    status,
-    payment_method,
-    user_uuid,
-    amount
-  } = req.body;
-
   try {
+    let {
+      tour_id,
+      booking_date,
+      full_name,
+      email,
+      phone,
+      persons,
+      status,
+      payment_method,
+      user_uuid,
+      amount
+    } = req.body;
 
-    // STEP 1: VALIDATION FIRST
+    // -----------------------
+    // NORMALIZATION (CRITICAL FIX)
+    // -----------------------
+    const parsedTourId = Number(tour_id);
+    const parsedPersons = Number(persons);
+    const parsedAmount = Number(amount);
+
+    // -----------------------
+    // REQUIRED FIELDS CHECK (STRICT + SAFE)
+    // -----------------------
     if (
-      !tour_id ||
-      !booking_date ||
-      !full_name ||
-      !email ||
-      !phone ||
-      !persons ||
-      !payment_method ||
-      !amount
+      tour_id === undefined ||
+      booking_date === undefined ||
+      full_name === undefined ||
+      email === undefined ||
+      phone === undefined ||
+      persons === undefined ||
+      payment_method === undefined ||
+      amount === undefined
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Email validation
+    // -----------------------
+    // TOUR ID VALIDATION (FIXED)
+    // -----------------------
+    if (!Number.isInteger(parsedTourId) || parsedTourId <= 0) {
+      return res.status(400).json({ error: "Invalid tour_id" });
+    }
+
+    // If you want strict enforcement (recommended since no tours table):
+    if (!VALID_TOUR_IDS.has(parsedTourId)) {
+      return res.status(400).json({ error: "Invalid tour_id" });
+    }
+
+    // -----------------------
+    // EMAIL VALIDATION
+    // -----------------------
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: "Invalid email" });
     }
 
-    // Phone validation (PH format)
+    // -----------------------
+    // PHONE VALIDATION
+    // -----------------------
     const phoneRegex = /^(09\d{9}|\+639\d{9})$/;
     if (!phoneRegex.test(phone)) {
       return res.status(400).json({ error: "Invalid phone" });
     }
 
-    // Persons validation
-    if (typeof persons !== "number" || persons <= 0) {
+    // -----------------------
+    // PERSONS VALIDATION
+    // -----------------------
+    if (!Number.isInteger(parsedPersons) || parsedPersons <= 0) {
       return res.status(400).json({ error: "Invalid number of persons" });
     }
 
-    // Amount validation
-    if (typeof amount !== "number" || amount <= 0) {
+    // -----------------------
+    // AMOUNT VALIDATION
+    // -----------------------
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    //Date validation - must be a valid date and not in the past
+    // -----------------------
+    // DATE VALIDATION
+    // -----------------------
     const bookingDateObj = new Date(booking_date);
-    const now = new Date();
 
     if (isNaN(bookingDateObj.getTime())) {
       return res.status(400).json({ error: "Invalid date format" });
     }
 
+    const now = new Date();
     if (bookingDateObj < now) {
       return res.status(400).json({ error: "Booking date cannot be in the past" });
     }
 
-    // STEP 2: INSERT BOOKING
+    // -----------------------
+    // PAYMENT METHOD VALIDATION
+    // -----------------------
+    if (!allowedPaymentMethods.includes(payment_method)) {
+      return res.status(400).json({ error: "Invalid payment method" });
+    }
+
+    // -----------------------
+    // INSERT BOOKING
+    // -----------------------
     const { data: bookingData, error: bookingError } = await supabase
       .from('bookings')
-      .insert([
-        {
-          user_id: user_uuid || null,
-          tour_id,
-          booking_date,
-          full_name,
-          email,
-          phone,
-          persons,
-          status: status || "pending",
-          payment_method,
-        },
-      ])
+      .insert([{
+        user_id: user_uuid || null,
+        tour_id: parsedTourId,
+        booking_date,
+        full_name,
+        email,
+        phone,
+        persons: parsedPersons,
+        status: status || "pending",
+        payment_method
+      }])
       .select()
       .single();
 
@@ -91,37 +132,32 @@ router.post('/', async (req, res) => {
       return res.status(500).json({ error: bookingError.message });
     }
 
-
-    // STEP 3: INSERT PAYMENT
+    // -----------------------
+    // INSERT PAYMENT
+    // -----------------------
     const { error: paymentError } = await supabase
       .from('payments')
-      .insert([
-        {
-          booking_id: bookingData.id,
-          amount,
-          method: payment_method,
-          paid_at:
-            payment_method === "pay_on_arrival"
-              ? null
-              : new Date().toISOString(),
-        },
-      ]);
+      .insert([{
+        booking_id: bookingData.id,
+        amount: parsedAmount,
+        method: payment_method,
+        paid_at:
+          payment_method === "pay_on_arrival"
+            ? null
+            : new Date().toISOString()
+      }]);
 
-    // Payment validation - check if method is allowed
-    const allowedMethods = ["gcash", "card", "pay_on_arrival"];
-
-    if (!allowedMethods.includes(payment_method)) {
-      return res.status(400).json({ error: "Invalid payment method" });
-    }
     if (paymentError) {
       console.error("Payment insert error:", paymentError);
       return res.status(500).json({ error: paymentError.message });
     }
 
-    // STEP 4: RESPONSE
+    // -----------------------
+    // RESPONSE
+    // -----------------------
     return res.status(200).json({
       success: true,
-      booking: bookingData,
+      booking: bookingData
     });
 
   } catch (err) {
