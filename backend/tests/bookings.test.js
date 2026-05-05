@@ -9,15 +9,20 @@ describe('Booking API (Integration Tests - Supabase)', () => {
 
   let createdBookingIds = [];
 
-
   // HELPERS
   const uniqueEmail = () =>
     `booking_${Date.now()}_${Math.floor(Math.random() * 10000)}@gmail.com`;
 
+  const futureDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  };
+
   const testBooking = (overrides = {}) => ({
-    user_uuid: null, // adjust if required
+    user_uuid: null,
     tour_id: 1,
-    booking_date: '2026-04-14',
+    booking_date: futureDate(),
     full_name: 'Test User',
     email: uniqueEmail(),
     phone: '09171234567',
@@ -34,7 +39,7 @@ describe('Booking API (Integration Tests - Supabase)', () => {
 
   const cleanupBookings = async () => {
     for (const id of createdBookingIds) {
-      // delete payments first (avoid FK issues)
+
       await supabase
         .from(PAYMENTS_TABLE)
         .delete()
@@ -45,6 +50,7 @@ describe('Booking API (Integration Tests - Supabase)', () => {
         .delete()
         .eq('id', id);
     }
+
     createdBookingIds = [];
   };
 
@@ -52,12 +58,10 @@ describe('Booking API (Integration Tests - Supabase)', () => {
     await cleanupBookings();
   });
 
-
   // CREATE BOOKING
   describe('POST /bookings', () => {
 
-
-    //  SUCCESS
+    // SUCCESS
     it('should create booking and payment successfully', async () => {
       const booking = testBooking();
 
@@ -72,7 +76,7 @@ describe('Booking API (Integration Tests - Supabase)', () => {
       trackBooking(res.body.booking.id);
     });
 
-    //  VALIDATION
+    // VALIDATION
     it('should return 400 if required fields are missing', async () => {
       const res = await request(app)
         .post('/bookings')
@@ -121,8 +125,7 @@ describe('Booking API (Integration Tests - Supabase)', () => {
       expect(res.statusCode).toBe(400);
     });
 
-
-    //  BUSINESS LOGIC
+    // BUSINESS LOGIC
     it('should return 400 if booking date is in the past', async () => {
       const booking = testBooking({ booking_date: '2020-01-01' });
 
@@ -143,8 +146,7 @@ describe('Booking API (Integration Tests - Supabase)', () => {
       expect([400, 500]).toContain(res.statusCode);
     });
 
-  
-    //  PAYMENT VALIDATION
+    // PAYMENT VALIDATION
     it('should return 400 if payment_method is missing', async () => {
       const booking = testBooking();
       delete booking.payment_method;
@@ -188,10 +190,8 @@ describe('Booking API (Integration Tests - Supabase)', () => {
     });
 
     // FAILURE SCENARIO
-
     it('should handle DB constraint failure gracefully', async () => {
       const booking = testBooking({
-        // intentionally break constraint if your DB enforces it
         tour_id: null
       });
 
@@ -202,7 +202,7 @@ describe('Booking API (Integration Tests - Supabase)', () => {
       expect([400, 500]).toContain(res.statusCode);
     });
 
-    //  RESPONSE SAFETY
+    // RESPONSE SAFETY
     it('should not expose internal fields in response', async () => {
       const booking = testBooking();
 
